@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { responsesChat } from "../../shared/openai.ts";
+import { COACH_CORE } from "../../shared/coachInstructions.ts";
 
 // Generates the Career DNA summary from all accumulated evidence.
 // Input: { evidence_items, contradictions, scores, simulations }
@@ -16,7 +17,15 @@ export default async function(req: Request): Promise<Response> {
     const scores = body?.scores || {};
     const simulations = body?.simulations || [];
 
-    const instructions = `You are Career Compass. Produce a Career DNA summary grounded ONLY in the provided evidence. Every important claim should be traceable to evidence. State blind spots honestly. Be concise.`;
+    const task = `## YOUR TASK
+
+Produce a Career DNA summary grounded ONLY in the provided evidence, contradictions, scores and simulations.
+
+- Distinguish DECLARED PREFERENCE, BEHAVIORAL EVIDENCE, ABILITY, ENERGY, VALUES, and WORK STYLE. Do not treat a stated interest as proof of fit.
+- Every important claim should be traceable to evidence. Describe energy sources and drains honestly.
+- Apply PSYCHOMETRIC CAUTION: use exploratory language ("current pattern", "working hypothesis", "evidence-based indication"). Never use clinical, diagnostic, certified, or scientifically-definitive language. Never diagnose conditions.
+- State blind spots honestly. Be concise. No chain-of-thought.`;
+    const instructions = COACH_CORE + "\n\n---\n\n" + task;
 
     const schema = {
       type: "object",

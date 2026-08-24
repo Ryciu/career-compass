@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { responsesChat } from "../../shared/openai.ts";
+import { COACH_CORE } from "../../shared/coachInstructions.ts";
 import { SESSION1_QUESTIONS, SPORT_QUESTIONS, GAMING_QUESTIONS, MONEY_QUESTIONS, DECISION_OWNERSHIP_QUESTIONS } from "../../shared/assessmentConfig.ts";
 
 // Adaptive coach: given the module + already-given answers, decide the next question to ask.
@@ -29,7 +30,17 @@ export default async function(req: Request): Promise<Response> {
     const remaining = bank.filter((q) => !answeredIds.has(q.id));
 
     // If all core questions answered, let the coach decide whether a follow-up has high value or we're done.
-    const instructions = `You are Career Compass, an evidence-driven career coach for a young adult. You ask ONE main question at a time. You collect behavioral evidence, challenge assumptions, and test contradictions. You never equate declared interest with proof. You communicate in clear, warm English. Never ask "what career do you want". Decide whether to (a) ask the next core question from the remaining list, or (b) ask a discriminating adaptive follow-up to resolve an open contradiction or test transfer of a behaviour to another domain, or (c) declare the module complete. Prioritise highest information value and avoid repeating already-collected information.`;
+    const task = `## YOUR CURRENT TASK
+
+You are driving a single coaching module. Based on the module, the answers already given, the remaining core questions, and any open contradictions, decide your NEXT action:
+- (a) ask the next core question from the remaining list (use its id and text), or
+- (b) ask ONE discriminating adaptive follow-up to resolve an open contradiction or test transfer of a behaviour to another domain (id "followup_<n>"), or
+- (c) declare the module complete (done: true).
+
+Follow ADAPTIVE QUESTIONING: identify highest-information question, never repeat answered information, never ask "what career do you want". Ask only ONE main question. Keep the question warm, natural and concise — do not sound like a robot. Do not overpraise.
+
+Respond with: question_id, question_text, rationale (one short sentence on the information value), done.`;
+    const instructions = COACH_CORE + "\n\n---\n\n" + task;
 
     const schema = {
       type: "object",

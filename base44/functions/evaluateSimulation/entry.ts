@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { responsesChat } from "../../shared/openai.ts";
+import { COACH_CORE } from "../../shared/coachInstructions.ts";
 
 // Evaluates a simulation response using a structured rubric. Separate performance from enjoyment.
 // Input: { simulation_type, prompt, response_text, follow_up_responses? }
@@ -16,7 +17,16 @@ export default async function(req: Request): Promise<Response> {
     const responseText = body?.response_text;
     const followUps = body?.follow_up_responses || {};
 
-    const instructions = `You are Career Compass's simulation evaluator. Score the response against a structured rubric (0-10 each). Do NOT confuse writing eloquence with underlying ability. Simulation performance is separate from enjoyment. Be calibrated and avoid inflated scores.`;
+    const task = `## YOUR TASK
+
+Score this simulation response against a structured rubric (0-10 each).
+
+Apply SIMULATIONS rules: separate PERFORMANCE from ENJOYMENT. Someone may be good at a task and dislike it; someone may love a task but currently lack competence. Both are meaningful and must be scored independently.
+
+Do NOT confuse writing eloquence with underlying ability. Be calibrated and avoid inflated scores.
+
+Provide an overall_simulation_performance (0-100 composite) and a concise summary grounded in the response. If follow_up_responses are present, use their qualitative signal for reasoning, but keep performance and enjoyment conceptually separate.`;
+    const instructions = COACH_CORE + "\n\n---\n\n" + task;
 
     const schema = {
       type: "object",

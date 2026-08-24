@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { responsesChat } from "../../shared/openai.ts";
+import { COACH_CORE } from "../../shared/coachInstructions.ts";
 
 // Generates career hypotheses from evidence + scores + simulations + career DNA.
 // Input: { career_dna, evidence_items, contradictions, scores, simulations }
@@ -17,11 +18,22 @@ export default async function(req: Request): Promise<Response> {
     const scores = body?.scores || {};
     const simulations = body?.simulations || [];
 
-    const instructions = `You are Career Compass. Generate career hypotheses with explicit uncertainty. Produce exactly:
+    const task = `## YOUR TASK
+
+Generate career hypotheses using explicit uncertainty and the CAREER OUTPUT dimensions (interest fit, strength evidence, values fit, work style fit, lifestyle fit, simulation performance, simulation enjoyment).
+
+Produce exactly:
 - 3 strongest-fit hypotheses
-- 2 wildcard / non-obvious hypotheses
+- 2 wildcard / non-obvious hypotheses (at least one should be non-obvious if the evidence supports one)
 - up to 3 poor-current-fit directions
-Each hypothesis must include per-dimension fit scores (0-100), supporting/contradictory evidence, unknowns, a reality check, a suggested experiment, and education implication. Do NOT force business, design, sport or gaming unless evidence supports them. Confidence is separate from fit and depends on evidence amount/quality, consistency, simulation exposure, and unresolved contradictions. Avoid false precision.`;
+
+Rules:
+- Do NOT privilege business, design, sport, or gaming unless evidence supports them.
+- Apply DISCONFIRMATION: every hypothesis must include what could make it wrong (contradictory_evidence) and unknowns.
+- Fit and confidence are DIFFERENT: confidence depends on evidence amount/quality, consistency, simulation exposure, and unresolved contradictions. A hypothesis can be FIT: HIGH, CONFIDENCE: MODERATE.
+- Each hypothesis must include per-dimension fit scores (0-100), supporting/contradictory evidence, unknowns, a reality check, a suggested experiment, and an education implication.
+- Avoid false precision. Apply PSYCHOMETRIC CAUTION (exploratory framing).`;
+    const instructions = COACH_CORE + "\n\n---\n\n" + task;
 
     const hypothesisSchema = {
       type: "object",

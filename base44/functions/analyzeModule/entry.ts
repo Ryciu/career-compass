@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { responsesChat } from "../../shared/openai.ts";
+import { COACH_CORE } from "../../shared/coachInstructions.ts";
 
 // Analyses a completed module's responses into structured EvidenceItems + Contradictions.
 // Input: { module, responses: [{ question_id, question_text, first_response, reflection_response }] }
@@ -15,13 +16,17 @@ export default async function(req: Request): Promise<Response> {
     const responses = body?.responses || [];
     const priorEvidence = body?.priorEvidence || [];
 
-    const instructions = `You are Career Compass's analysis engine. Distill the user's responses into structured EvidenceItems and Contradictions. Rules:
-- Distinguish DECLARED INTEREST, BEHAVIORAL EVIDENCE, ABILITY, ENERGY, VALUES, WORK ENVIRONMENT.
-- Strength: weak = hypothetical declaration; medium = one concrete behavioural example; strong = repeated behaviour, sustained commitment, meaningful achievement, or multiple independent examples.
-- NEVER infer a global trait from isolated behaviour. e.g. do NOT say "User is highly conscientious" from gym training; say "User demonstrates sustained discipline in a domain with measurable progress."
-- Detect tensions between declared goals, past behaviour, values, risk preferences, enjoyment. A contradiction must create a question.
-- Claims must be grounded in the user's actual words (supporting_excerpt).
-- Be concise. No chain-of-thought.`;
+    const task = `## YOUR TASK
+
+Distill the user's responses into structured EvidenceItems and Contradictions.
+
+- Classify each EvidenceItem by domain (DECLARED INTEREST, BEHAVIORAL EVIDENCE, ABILITY, ENERGY, VALUES, WORK ENVIRONMENT) and whether it supports or contradicts the emerging profile.
+- Apply EVIDENCE strength rules: weak = hypothetical declaration; medium = one concrete behavioural example; strong = repeated behaviour, sustained commitment, achievement, or multiple independent examples.
+- NEVER infer a global trait from isolated behaviour. Apply SPORT and GAMING decompositions where relevant: do not equate gym interest with Personal Trainer fit, and treat playing games alone as insufficient evidence for a gaming career.
+- If first_response and reflection_response differ, treat the difference as information requiring exploration — do not assume the first answer is more authentic.
+- Detect tensions between declared goals, past behaviour, values, risk preferences, enjoyment. Each contradiction must produce a follow_up_question that can discriminate between the two directions.
+- Ground every claim in the user's actual words (supporting_excerpt). Be concise. No chain-of-thought.`;
+    const instructions = COACH_CORE + "\n\n---\n\n" + task;
 
     const schema = {
       type: "object",

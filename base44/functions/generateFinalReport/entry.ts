@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { responsesChat } from "../../shared/openai.ts";
+import { COACH_CORE } from "../../shared/coachInstructions.ts";
 
 // Generates the full final report. Two parallel outputs:
 //  - English structured sections for the user
@@ -14,11 +15,25 @@ export default async function(req: Request): Promise<Response> {
     const body = await req.json();
     const bundle = body || {};
 
-    const instructions = `You are Career Compass. Write the final report from the user's evidence. Use language such as "The evidence currently suggests…", "Confidence is moderate because…", "This hypothesis requires testing…". NEVER say "This is what you should do with your life." Separate the CAREER DECISION from the EDUCATION DECISION, and never assume university is automatically the best path. Suggest inexpensive real-world experiments before expensive education decisions. Include a 30-day plan.
+    const task = `## YOUR TASK
+
+Write the final report from the user's evidence. Apply FINAL TONE: never write "You should become X." Use "The strongest current hypothesis is…", "The evidence supporting this is…", "This remains uncertain because…", "Before committing to expensive education, test this by…".
+
+Structure (FINAL REPORT):
+- Prioritize 3 strongest hypotheses, 2 wildcard hypotheses, up to 3 directions currently showing weak fit.
+- For every strong hypothesis include WHY IT MAY FIT, EVIDENCE, CONTRARY EVIDENCE, WHAT WE DO NOT KNOW, REALITY CHECK, LOW-COST EXPERIMENT, EDUCATION IMPLICATION, CONFIDENCE.
+
+Education (EDUCATION rules):
+- Separate the CAREER DECISION from the EDUCATION DECISION. Do not assume a university degree is automatically the best path. Use the English education labels for education_direction_type (university_degree, vocational_vet, professional_certification, portfolio_based, work_experience, entrepreneurial_experiment, unclear_explore_first).
+- Suggest inexpensive real-world experiments before expensive education decisions.
+- Include a 30-day action plan.
+
+Cautions (PSYCHOMETRIC CAUTION): exploratory framing only — never clinical, diagnostic, certified, or scientifically-definitive language. Never diagnose conditions.
 
 Produce BOTH:
 1. structured English sections (object fields)
 2. a complete Polish markdown summary (full_markdown_pl) — this is for the admin/researcher view.`;
+    const instructions = COACH_CORE + "\n\n---\n\n" + task;
 
     const experimentSchema = {
       type: "object",
