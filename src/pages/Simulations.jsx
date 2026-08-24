@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { SIMULATIONS } from "@/data/assessment";
 import ModuleShell from "@/components/ModuleShell";
 import { Button } from "@/components/ui/button";
-import { Loader2, Check } from "lucide-react";
+import { Loader2, Check, ChevronLeft, Pencil } from "lucide-react";
 
 const ORDER = ["business", "interior", "sport", "digital"];
 
@@ -126,6 +126,16 @@ export default function Simulations() {
     }
   }
 
+  function loadStep(i) {
+    setAllDone(false);
+    setIdx(i);
+    const r = results[ORDER[i]];
+    setResponse(r?.response_text || "");
+    setFollowUps(r?.follow_up_responses || {});
+    setEnjoyment(r?.enjoyment || 5);
+    setRepeat(r?.repeat_willingness || 5);
+  }
+
   if (loadingInit) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -141,8 +151,26 @@ export default function Simulations() {
           <Check className="w-8 h-8 text-primary" />
         </div>
         <h1 className="font-heading text-3xl mb-3">All simulations complete.</h1>
-        <p className="text-muted-foreground mb-8">Five mini-tasks done. Your responses (with enjoyment and willingness) are saved.</p>
-        <Button onClick={() => navigate("/app")} className="rounded-full h-12 px-6">Back to dashboard</Button>
+        <p className="text-muted-foreground mb-8">Four mini-tasks done. Your responses (with enjoyment and willingness) are saved.</p>
+        <div className="space-y-2 mb-6 text-left">
+          {ORDER.map((t, i) => {
+            const s = SIMULATIONS[t];
+            return (
+              <button key={t} type="button" onClick={() => { setAllDone(false); loadStep(i); }}
+                className="w-full flex items-center gap-4 rounded-2xl border border-border bg-card p-4 hover:border-primary/40 transition-colors">
+                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium">{i + 1}</div>
+                <div className="flex-1">
+                  <div className="font-medium text-foreground">{s.label}</div>
+                  <div className="text-sm text-muted-foreground">Saved — tap to review or edit</div>
+                </div>
+                <Pencil className="w-4 h-4 text-muted-foreground" />
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex items-center justify-center gap-3">
+          <Button onClick={() => navigate("/app")} variant="outline" className="rounded-full h-12 px-6">Back to dashboard</Button>
+        </div>
       </div>
     );
   }
@@ -159,6 +187,22 @@ export default function Simulations() {
       step={idx + 1}
       totalSteps={ORDER.length}
     >
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-1.5">
+          {ORDER.map((t, i) => (
+            <button key={t} type="button" onClick={() => loadStep(i)}
+              className={`w-7 h-7 rounded-full text-xs font-medium transition-colors ${i === idx ? "bg-primary text-primary-foreground" : results[t] ? "bg-primary/10 text-primary hover:bg-primary/20" : "bg-muted text-muted-foreground hover:bg-muted/70"}`}>
+              {i + 1}
+            </button>
+          ))}
+        </div>
+        {idx > 0 && (
+          <Button type="button" variant="ghost" size="sm" onClick={() => loadStep(idx - 1)} className="gap-1 px-2 text-muted-foreground">
+            <ChevronLeft className="w-4 h-4" /> Back
+          </Button>
+        )}
+      </div>
+
       <div className="rounded-2xl bg-card border border-border p-6 whitespace-pre-line text-[15px] leading-relaxed">{fullPrompt}</div>
       {simKey === "wildcard" && (
         <div className="rounded-xl bg-accent/60 border border-accent p-4 text-sm text-accent-foreground leading-relaxed">
