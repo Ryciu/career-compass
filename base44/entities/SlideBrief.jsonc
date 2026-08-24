@@ -1,0 +1,112 @@
+{
+  "name": "SlideBrief",
+  "type": "object",
+  "properties": {
+    "report_id": {
+      "type": "string"
+    },
+    "slide_number": {
+      "type": "number"
+    },
+    "slide_title": {
+      "type": "string"
+    },
+    "core_message": {
+      "type": "string"
+    },
+    "supporting_points": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "validated_scores": {
+      "type": "object"
+    },
+    "career_implications": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "green_flags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "red_flags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "short_takeaway": {
+      "type": "string"
+    },
+    "infographic_type": {
+      "type": "string"
+    },
+    "recommended_layout": {
+      "type": "string"
+    },
+    "must_include": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "must_not_include": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "report_id",
+    "slide_number",
+    "slide_title"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

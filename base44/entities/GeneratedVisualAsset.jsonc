@@ -1,0 +1,92 @@
+{
+  "name": "GeneratedVisualAsset",
+  "type": "object",
+  "properties": {
+    "report_id": {
+      "type": "string"
+    },
+    "slide_number": {
+      "type": "number"
+    },
+    "title": {
+      "type": "string"
+    },
+    "source_brief": {
+      "type": "object"
+    },
+    "generation_prompt": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string",
+      "default": "base44"
+    },
+    "generated_asset_url": {
+      "type": "string"
+    },
+    "generation_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "complete",
+        "failed"
+      ],
+      "default": "pending"
+    },
+    "validation_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "valid",
+        "invalid"
+      ],
+      "default": "pending"
+    }
+  },
+  "required": [
+    "report_id",
+    "slide_number",
+    "title"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

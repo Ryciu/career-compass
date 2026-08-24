@@ -1,0 +1,77 @@
+{
+  "name": "SlidePrompt",
+  "type": "object",
+  "properties": {
+    "report_id": {
+      "type": "string"
+    },
+    "slide_number": {
+      "type": "number"
+    },
+    "slide_title": {
+      "type": "string"
+    },
+    "prompt": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string",
+      "default": "base44"
+    },
+    "validation_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "valid",
+        "invalid"
+      ],
+      "default": "pending"
+    }
+  },
+  "required": [
+    "report_id",
+    "slide_number",
+    "prompt"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

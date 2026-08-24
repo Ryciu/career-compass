@@ -11,6 +11,8 @@ export const MODULES = [
   { id: "simulations", label: "Work Simulations", subtitle: "Five realistic mini-tasks", route: "/app/simulations", type: "simulations", phase: 2 },
   { id: "sjt", label: "Situational Judgment", subtitle: "How you act in real situations", route: "/app/sjt", type: "sjt", phase: 2 },
   { id: "career_drivers", label: "Career Drivers", subtitle: "Forced-choice: what truly drives you", route: "/app/career-drivers", type: "drivers", phase: 2 },
+  { id: "natural_strengths", label: "Natural Strength Patterns", subtitle: "How you naturally produce results", route: "/app/natural-strengths", type: "strengths", phase: 2 },
+  { id: "behavioral_energy", label: "Behavioral Energy Profile", subtitle: "Natural vs adapted style", route: "/app/behavioral-energy", type: "energy", phase: 2 },
 ];
 
 export const PHASES = [

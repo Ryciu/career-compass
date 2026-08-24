@@ -17,6 +17,8 @@ import Values from '@/pages/Values';
 import Simulations from '@/pages/Simulations';
 import SituationalJudgment from '@/pages/SituationalJudgment';
 import CareerDrivers from '@/pages/CareerDrivers';
+import NaturalStrengths from '@/pages/NaturalStrengths';
+import BehavioralEnergy from '@/pages/BehavioralEnergy';
 import Analysis from '@/pages/Analysis';
 import CareerDna from '@/pages/CareerDna';
 import Hypotheses from '@/pages/Hypotheses';
@@ -73,6 +75,8 @@ const AuthenticatedApp = () => {
         <Route path="/app/simulations" element={<Layout><Simulations /></Layout>} />
         <Route path="/app/sjt" element={<Layout><SituationalJudgment /></Layout>} />
         <Route path="/app/career-drivers" element={<Layout><CareerDrivers /></Layout>} />
+        <Route path="/app/natural-strengths" element={<Layout><NaturalStrengths /></Layout>} />
+        <Route path="/app/behavioral-energy" element={<Layout><BehavioralEnergy /></Layout>} />
         <Route path="/app/analysis" element={<Analysis />} />
         <Route path="/app/career-dna" element={<CareerDna />} />
         <Route path="/app/hypotheses" element={<Hypotheses />} />

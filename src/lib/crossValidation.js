@@ -8,7 +8,7 @@
 //   drivers: scoreMap["career_drivers"]
 //   evidence: [{ domain, claim, supports_or_contradicts }]
 //   simulations: [{ evaluation, enjoyment, repeat_willingness }]
-export function crossValidate({ scoreMap, sjt, drivers, evidence, simulations }) {
+export function crossValidate({ scoreMap, sjt, drivers, evidence, simulations, strengths, energy }) {
   const flags = [];
   const workStyle = scoreMap?.["work_style"]?.raw_data || {}; // slider values 1..7
   const valuesScores = scoreMap?.["values"]?.scores || {}; // { top_values: [...] }
@@ -101,6 +101,32 @@ export function crossValidate({ scoreMap, sjt, drivers, evidence, simulations })
           description: `In the ${s.simulation_type} simulation you performed well but reported low enjoyment — high ability without interest is a caution signal for fit.`,
         });
       }
+    }
+  }
+
+  // 8. Natural Strength Patterns: initiative shows across SJT + strengths.
+  const topStrengths = strengths?.scores?.top5 || strengths?.top5 || [];
+  if (topStrengths.includes("INITIATOR") && sjtInit != null && sjtInit >= 65) {
+    flags.push({
+      type: "alignment",
+      dimension_a: "natural_strengths.initiator",
+      dimension_b: "sjt.initiative",
+      description: "Initiative appears consistently across your Natural Strength Patterns and situational choices.",
+    });
+  }
+
+  // 9. Behavioral Energy: natural structure vs adaptive flex under pressure.
+  const eNat = energy?.natural || energy?.scores?.natural || {};
+  const eAdp = energy?.adapted || energy?.scores?.adapted || {};
+  if ((eNat.adaptive_structured ?? null) != null && (eAdp.adaptive_structured ?? null) != null) {
+    if (eNat.adaptive_structured >= 65 && eAdp.adaptive_structured <= 40) {
+      flags.push({
+        type: "uncertainty",
+        dimension_a: "behavioral_energy.natural.structured",
+        dimension_b: "behavioral_energy.adapted.structured",
+        description: "You're naturally structured, but under pressure you adapt and flex away from the plan.",
+        follow_up_question: "Normally you stick to structure, yet when it counts you improvise. What about pressure makes you switch — is it a strength or a stress response?",
+      });
     }
   }
 
