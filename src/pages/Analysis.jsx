@@ -138,10 +138,14 @@ async function buildBundle() {
   const reportRes = await base44.functions.invoke("generateFinalReport", reportBundle);
   const reportData = reportRes?.data || {};
 
+  // Polish markdown is generated in two parts and concatenated, so each LLM call
+  // emits ~half the output and stays well under the platform execution cap.
   let markdownPl = "";
+  const plBase = { en_report: reportData, career_dna: careerDna, hypotheses };
   try {
-    const plRes = await base44.functions.invoke("generatePolishReport", { en_report: reportData, career_dna: careerDna, hypotheses });
-    markdownPl = plRes?.data?.full_markdown_pl || "";
+    const r1 = await base44.functions.invoke("generatePolishReport", { ...plBase, part: 1 });
+    const r2 = await base44.functions.invoke("generatePolishReport", { ...plBase, part: 2 });
+    markdownPl = ((r1?.data?.full_markdown_pl || "") + "\n\n" + (r2?.data?.full_markdown_pl || "")).trim();
   } catch {}
 
   const reportPayload = {
