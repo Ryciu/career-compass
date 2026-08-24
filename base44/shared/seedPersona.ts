@@ -202,7 +202,7 @@ export async function seedPersona(base44): Promise<any> {
   // Profile
   let profile = (await base44.entities.Profile.filter({}))[0];
   if (profile) await base44.entities.Profile.update(profile.id, PERSONA.profile);
-  else profile = await base44.entities.Profile.create(PERNA_profileGuard(PERSONA.profile));
+  else profile = await base44.entities.Profile.create(PERSONA.profile);
   log.push("profile ok");
 
   // Open modules: sessions + responses
@@ -262,6 +262,3 @@ export async function seedPersona(base44): Promise<any> {
 
   return { ok: true, riasecScores, sjtDimensions: dimension_scores, driversRanked: ranked.slice(0, 5), values: PERSONA.values.top3, log };
 }
-
-// Tiny guard so a required-field typo can't silently corrupt the profile create.
-function PERNA_profileGuard(p: any) { return p; }
