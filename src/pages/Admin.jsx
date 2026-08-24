@@ -44,7 +44,12 @@ export default function Admin() {
       const contradictions = (await base44.entities.Contradiction.list()).filter((c) => c.created_by_id === u.id);
       const hypo = (await base44.entities.CareerHypothesis.list("-fit_score")).filter((h) => h.created_by_id === u.id);
       const report = (await base44.entities.Report.list()).find((r) => r.created_by_id === u.id);
-      setData({ sessions: mySessions, profile, responses, scores, sims, evidence, contradictions, hypo, report });
+      const vsAnalysis = (await base44.entities.VisualStoryAnalysis.list()).filter((v) => v.created_by_id === u.id);
+      const vsStoryboard = (await base44.entities.VisualStoryboard.list()).filter((v) => v.created_by_id === u.id);
+      const vsBriefs = (await base44.entities.SlideBrief.list("-slide_number")).filter((v) => v.created_by_id === u.id);
+      const vsPrompts = (await base44.entities.SlidePrompt.list("-slide_number")).filter((v) => v.created_by_id === u.id);
+      const vsAssets = (await base44.entities.GeneratedVisualAsset.list("slide_number")).filter((v) => v.created_by_id === u.id);
+      setData({ sessions: mySessions, profile, responses, scores, sims, evidence, contradictions, hypo, report, vsAnalysis, vsStoryboard, vsBriefs, vsPrompts, vsAssets });
     } finally {
       setLoadingData(false);
     }
@@ -110,7 +115,7 @@ export default function Admin() {
 }
 
 function AdminUserData({ user, data }) {
-  const { profile, sessions, responses, scores, sims, evidence, contradictions, hypo, report } = data;
+  const { profile, sessions, responses, scores, sims, evidence, contradictions, hypo, report, vsAnalysis, vsStoryboard, vsBriefs, vsPrompts, vsAssets } = data;
   return (
     <div className="space-y-5">
       <ProfileCard profile={profile} user={user} />
@@ -122,8 +127,80 @@ function AdminUserData({ user, data }) {
       <ContradictionsCard contradictions={contradictions} />
       <CrossValidationCard report={report} />
       <HypoCard hypo={hypo} />
+      <VisualStoryCard analysis={vsAnalysis} storyboard={vsStoryboard} briefs={vsBriefs} prompts={vsPrompts} assets={vsAssets} />
       <ReportCard report={report} />
     </div>
+  );
+}
+
+function VisualStoryCard({ analysis, storyboard, briefs, prompts, assets }) {
+  const pipelineStages = [
+    { label: "Analiza", count: analysis.length },
+    { label: "Storyboard", count: storyboard.length },
+    { label: "Briefy", count: briefs.length },
+    { label: "Prompty", count: prompts.length },
+    { label: "Grafiki", count: assets.length },
+  ];
+  return (
+    <Card title="Potok wizualny (Visual Story)">
+      <div className="flex flex-wrap gap-2 mb-4">
+        {pipelineStages.map((s) => (
+          <span key={s.label} className={`text-xs px-2 py-1 rounded-full ${s.count > 0 ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+            {s.label}: {s.count}
+          </span>
+        ))}
+      </div>
+      {assets.length === 0 && briefs.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Brak danych potoku wizualnego. Uruchom pipeline na stronie Visual Story.</p>
+      ) : (
+        <div className="space-y-4">
+          {analysis[0]?.stories?.length > 0 && (
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Wybrane historie (analiza)</p>
+              <div className="space-y-1">
+                {analysis[0].stories.slice(0, 10).map((st, i) => (
+                  <div key={i} className="text-sm border-b border-border pb-1">
+                    <span className="font-medium">{st.slide_title || st.story_title || `Slajd ${i + 1}`}</span>
+                    {st.infographic_type && <span className="text-xs text-muted-foreground"> · {st.infographic_type}</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {briefs.map((b) => {
+            const prompt = prompts.find((p) => p.slide_number === b.slide_number);
+            const asset = assets.find((a) => a.slide_number === b.slide_number);
+            return (
+              <div key={b.id} className="rounded-xl border border-border p-3">
+                <div className="flex justify-between items-start gap-2 mb-2">
+                  <div>
+                    <span className="text-xs text-muted-foreground tabular-nums">Slajd {b.slide_number}</span>
+                    <h4 className="font-heading text-sm">{b.slide_title}</h4>
+                  </div>
+                  <div className="flex gap-1 flex-wrap justify-end">
+                    {asset && (
+                      <span className={`text-xs px-1.5 py-0.5 rounded ${asset.generation_status === "complete" ? "bg-primary/10 text-primary" : asset.generation_status === "failed" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>
+                        gen: {asset.generation_status}
+                      </span>
+                    )}
+                    {prompt && (
+                      <span className={`text-xs px-1.5 py-0.5 rounded ${prompt.validation_status === "valid" ? "bg-primary/10 text-primary" : prompt.validation_status === "invalid" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>
+                        wal: {prompt.validation_status}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {asset?.generated_asset_url && (
+                  <img src={asset.generated_asset_url} alt={asset.title} className="w-full rounded-lg mb-2 max-h-48 object-cover" />
+                )}
+                {b.core_message && <p className="text-xs text-muted-foreground mb-1">{b.core_message}</p>}
+                {b.short_takeaway && <p className="text-xs italic text-foreground/80">→ {b.short_takeaway}</p>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Card>
   );
 }
 
