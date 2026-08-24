@@ -30,6 +30,14 @@ Education (EDUCATION rules):
 
 Cautions (PSYCHOMETRIC CAUTION): exploratory framing only — never clinical, diagnostic, certified, or scientifically-definitive language. Never diagnose conditions.
 
+Also incorporate the two structured assessments (input keys: sjt, career_drivers, and cross_validation flags). Produce these additional English sections:
+
+- motivational_drivers: top 3-5 Career Drivers from the forced-choice test. For each give driver, category (from normalized score band), a brief interpretation, supporting evidence, and any possible tension with other findings. Never label low drivers as weaknesses.
+- sjt_behavioral_patterns: the 4-6 most meaningful behavioural patterns from the Situational Judgment Test. Do NOT list every score. State each only when supported.
+- where_tests_disagree: where self-description, forced choices, situational decisions, past behaviour and simulations conflict, state the disagreements explicitly as useful diagnostic information.
+
+Do not over-interpret small differences. A career recommendation must never rest on a single structured test; confidence rises only when a finding appears in at least TWO independent sources.
+
 Produce BOTH:
 1. structured English sections (object fields)
 2. a complete Polish markdown summary (full_markdown_pl) — this is for the admin/researcher view.`;
@@ -76,6 +84,22 @@ Produce BOTH:
         experiments: { type: "array", items: experimentSchema },
         action_plan_30_day: { type: "array", items: actionItemSchema },
         twelve_month_direction: { type: "string" },
+        motivational_drivers: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              driver: { type: "string" },
+              category: { type: "string" },
+              interpretation: { type: "string" },
+              supporting_evidence: { type: "array", items: { type: "string" } },
+              possible_tension: { type: "string" },
+            },
+            required: ["driver", "interpretation"],
+          },
+        },
+        sjt_behavioral_patterns: { type: "array", items: { type: "string" } },
+        where_tests_disagree: { type: "array", items: { type: "string" } },
         full_markdown_pl: { type: "string", description: "Pełny raport po polsku w formacie Markdown dla administratora/badacza" },
       },
       required: ["executive_summary", "education_direction_type", "experiments", "action_plan_30_day", "full_markdown_pl"],

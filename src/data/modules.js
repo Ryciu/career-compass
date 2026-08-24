@@ -9,6 +9,8 @@ export const MODULES = [
   { id: "work_style", label: "Work Style", subtitle: "18 sliders on how you work best", route: "/app/work-style", type: "sliders", phase: 2 },
   { id: "values", label: "Values", subtitle: "What outcomes truly matter to you", route: "/app/values", type: "values", phase: 2 },
   { id: "simulations", label: "Work Simulations", subtitle: "Five realistic mini-tasks", route: "/app/simulations", type: "simulations", phase: 2 },
+  { id: "sjt", label: "Situational Judgment", subtitle: "How you act in real situations", route: "/app/sjt", type: "sjt", phase: 2 },
+  { id: "career_drivers", label: "Career Drivers", subtitle: "Forced-choice: what truly drives you", route: "/app/career-drivers", type: "drivers", phase: 2 },
 ];
 
 export const PHASES = [

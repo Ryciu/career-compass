@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { SJT_SCENARIOS } from "@/data/structuredAssessments";
-import { scoreSjt, shuffle } from "@/lib/structuredScoring";
+import { scoreSjt } from "@/lib/structuredScoring";
 import { shuffle as shuffleArr } from "@/lib/scoring";
 import ModuleShell from "@/components/ModuleShell";
 import { Button } from "@/components/ui/button";
@@ -63,9 +63,7 @@ export default function SituationalJudgment() {
   }
 
   if (loadingInit) {
-    return (
-      <Layout><div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div></Layout>
-    );
+    return <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
   }
 
   if (done) {

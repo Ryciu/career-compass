@@ -32,7 +32,9 @@ Rules:
 - Apply DISCONFIRMATION: every hypothesis must include what could make it wrong (contradictory_evidence) and unknowns.
 - Fit and confidence are DIFFERENT: confidence depends on evidence amount/quality, consistency, simulation exposure, and unresolved contradictions. A hypothesis can be FIT: HIGH, CONFIDENCE: MODERATE.
 - Each hypothesis must include per-dimension fit scores (0-100), supporting/contradictory evidence, unknowns, a reality check, a suggested experiment, and an education implication.
-- Avoid false precision. Apply PSYCHOMETRIC CAUTION (exploratory framing).`;
+- Avoid false precision. Apply PSYCHOMETRIC CAUTION (exploratory framing).
+- Use SJT behavioural patterns (in scores.sjt) and Career Drivers (in scores.career_drivers) as supporting inputs to values_fit and work_style_fit, but never let a single structured test dominate a recommendation. Confidence rises only when a finding appears in at least TWO independent sources.
+- Career Drivers reveal relative motivation, not skill — do not inflate fit for a career just because a driver is high.`;
     const instructions = COACH_CORE + "\n\n---\n\n" + task;
 
     const hypothesisSchema = {
@@ -68,7 +70,7 @@ Rules:
       required: ["hypotheses"],
     };
 
-    const input = JSON.stringify({ career_dna: careerDna, evidence_items: evidenceItems, contradictions, scores, simulations });
+    const input = JSON.stringify({ career_dna: careerDna, evidence_items: evidenceItems, contradictions, scores, simulations, cross_validation: body?.cross_validation || [], sjt: body?.sjt || null, career_drivers: body?.career_drivers || null });
     const out = await responsesChat({ base44, instructions, input, jsonSchema: schema });
     return Response.json(out);
   } catch (error) {

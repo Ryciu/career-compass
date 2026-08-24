@@ -90,6 +90,30 @@ export default function CareerDna() {
           {dna.potential_blind_spots?.length > 0 && (
             <Card title="Potential blind spots"><List items={dna.potential_blind_spots} /></Card>
           )}
+
+          {dna.motivational_drivers?.length > 0 && (
+            <Card title="Motivational drivers">
+              <div className="space-y-3">
+                {dna.motivational_drivers.map((d, i) => (
+                  <div key={i} className="rounded-xl border border-border p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium">{d.driver}</span>
+                      {d.score_category && <span className="text-xs text-primary">{d.score_category}</span>}
+                    </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{d.interpretation}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {dna.behavioral_tendencies?.length > 0 && (
+            <Card title="How you tend to respond in real situations"><List items={dna.behavioral_tendencies} /></Card>
+          )}
+
+          {dna.cross_validation_notes?.length > 0 && (
+            <Card title="Where the tests disagree"><List items={dna.cross_validation_notes} /></Card>
+          )}
         </div>
       </div>
     </Layout>

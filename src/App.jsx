@@ -15,6 +15,8 @@ import RIasec from '@/pages/RIasec';
 import WorkStyle from '@/pages/WorkStyle';
 import Values from '@/pages/Values';
 import Simulations from '@/pages/Simulations';
+import SituationalJudgment from '@/pages/SituationalJudgment';
+import CareerDrivers from '@/pages/CareerDrivers';
 import Analysis from '@/pages/Analysis';
 import CareerDna from '@/pages/CareerDna';
 import Hypotheses from '@/pages/Hypotheses';
@@ -69,6 +71,8 @@ const AuthenticatedApp = () => {
         <Route path="/app/work-style" element={<Layout><WorkStyle /></Layout>} />
         <Route path="/app/values" element={<Layout><Values /></Layout>} />
         <Route path="/app/simulations" element={<Layout><Simulations /></Layout>} />
+        <Route path="/app/sjt" element={<Layout><SituationalJudgment /></Layout>} />
+        <Route path="/app/career-drivers" element={<Layout><CareerDrivers /></Layout>} />
         <Route path="/app/analysis" element={<Analysis />} />
         <Route path="/app/career-dna" element={<CareerDna />} />
         <Route path="/app/hypotheses" element={<Hypotheses />} />

@@ -14,7 +14,7 @@ export default function Layout({ children }) {
     (async () => {
       try {
         const sessions = await base44.entities.AssessmentSession.list();
-        const modules = ["session1", "sport", "gaming", "money", "decision_ownership", "riasec", "work_style", "values", "simulations"];
+        const modules = ["session1", "sport", "gaming", "money", "decision_ownership", "riasec", "work_style", "values", "simulations", "sjt", "career_drivers"];
         const done = sessions.filter((s) => s.status === "complete");
         const pct = Math.round((done.length / modules.length) * 100);
         if (active) setProgress(pct);

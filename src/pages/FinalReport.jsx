@@ -31,6 +31,33 @@ export default function FinalReport() {
           {s.demonstrated_strengths?.length > 0 && <Section title="Demonstrated strengths"><Bullets items={s.demonstrated_strengths} /></Section>}
           {s.work_environment_fit && <Section title="Work environment fit"><p className="text-[15px] leading-relaxed">{s.work_environment_fit}</p></Section>}
           {s.values_summary && <Section title="Values"><p className="text-[15px] leading-relaxed">{s.values_summary}</p></Section>}
+
+          {s.motivational_drivers?.length > 0 && (
+            <Section title="Your motivational drivers">
+              <div className="space-y-3">
+                {s.motivational_drivers.map((d, i) => (
+                  <div key={i} className="rounded-xl border border-border p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium">{d.driver}</span>
+                      {d.category && <span className="text-xs text-primary">{d.category}</span>}
+                    </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{d.interpretation}</p>
+                    {d.supporting_evidence?.length > 0 && <p className="text-xs text-muted-foreground mt-1">Evidence: {d.supporting_evidence.join("; ")}</p>}
+                    {d.possible_tension && <p className="text-xs text-amber-700 mt-1">Tension: {d.possible_tension}</p>}
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
+
+          {s.sjt_behavioral_patterns?.length > 0 && (
+            <Section title="How you tend to respond in real situations"><Bullets items={s.sjt_behavioral_patterns} /></Section>
+          )}
+
+          {s.where_tests_disagree?.length > 0 && (
+            <Section title="Where the tests disagree"><Bullets items={s.where_tests_disagree} /></Section>
+          )}
+
           {s.important_contradictions?.length > 0 && <Section title="Important contradictions"><Bullets items={s.important_contradictions} /></Section>}
           {s.top_hypotheses_summary?.length > 0 && <Section title="Top 3 career hypotheses"><Bullets items={s.top_hypotheses_summary} /></Section>}
           {s.wildcard_hypotheses_summary?.length > 0 && <Section title="Wildcard hypotheses"><Bullets items={s.wildcard_hypotheses_summary} /></Section>}

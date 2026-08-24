@@ -120,6 +120,7 @@ function AdminUserData({ user, data }) {
       <SimsCard sims={sims} />
       <EvidenceCard evidence={evidence} />
       <ContradictionsCard contradictions={contradictions} />
+      <CrossValidationCard report={report} />
       <HypoCard hypo={hypo} />
       <ReportCard report={report} />
     </div>
@@ -288,6 +289,30 @@ function ReportCard({ report }) {
           )}
         </div>
       )}
+    </Card>
+  );
+}
+
+function CrossValidationCard({ report }) {
+  const flags = report?.sections?.cross_validation || [];
+  if (!flags.length) {
+    return (
+      <Card title="Walidacja krzyżowa">
+        <p className="text-sm text-muted-foreground">Brak flag walidacji krzyżowej.</p>
+      </Card>
+    );
+  }
+  return (
+    <Card title={`Walidacja krzyżowa (${flags.length})`}>
+      <div className="space-y-2">
+        {flags.map((f, i) => (
+          <div key={i} className="text-sm border-b border-border pb-2">
+            <span className={`text-xs px-1.5 py-0.5 rounded mr-2 ${f.type === "contradiction" ? "bg-destructive/10 text-destructive" : f.type === "alignment" ? "bg-primary/10 text-primary" : "bg-accent text-accent-foreground"}`}>{f.type}</span>
+            <span>{f.description}</span>
+            {f.follow_up_question && <p className="text-xs text-muted-foreground mt-1">Follow-up: {f.follow_up_question}</p>}
+          </div>
+        ))}
+      </div>
     </Card>
   );
 }

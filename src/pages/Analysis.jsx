@@ -5,6 +5,7 @@ import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Loader2, Sparkles, AlertCircle } from "lucide-react";
 import { MODULES } from "@/data/modules";
+import { crossValidate } from "@/lib/crossValidation";
 
 async function ensureSession(moduleKey) {
   let s = (await base44.entities.AssessmentSession.filter({ module: moduleKey }))[0];
@@ -93,10 +94,33 @@ async function buildBundle() {
   for (const s of scores) scoreMap[s.module] = { scores: s.scores, raw_data: s.raw_data };
   const simResults = sims.map((s) => ({ simulation_type: s.simulation_type, response_text: s.response_text, enjoyment: s.enjoyment, repeat_willingness: s.repeat_willingness, evaluation: s.evaluation }));
 
+  // Cross-validation across structured tests + open-ended evidence + simulations.
+  const crossFlags = crossValidate({ scoreMap, sjt: scoreMap["sjt"], drivers: scoreMap["career_drivers"], evidence, simulations: simResults });
+  for (const f of crossFlags) {
+    if (f.type === "contradiction" || f.type === "uncertainty") {
+      const exists = finalContradictions.some((x) => x.description === f.description);
+      if (!exists) {
+        try {
+          await base44.entities.Contradiction.create({
+            description: f.description,
+            dimension_a: f.dimension_a || "",
+            dimension_b: f.dimension_b || "",
+            follow_up_question: f.follow_up_question || "",
+            status: "unresolved",
+          });
+        } catch {}
+      }
+    }
+  }
+  const finalContradictionsXV = await base44.entities.Contradiction.filter({});
+
   const bundle = {
     evidence_items: evidence.map((e) => ({ id: e.id, claim: e.claim, domain: e.domain, strength: e.strength, supports_or_contradicts: e.supports_or_contradicts, source_module: e.source_module, supporting_excerpt: e.supporting_excerpt })),
-    contradictions: finalContradictions.map((c) => ({ id: c.id, description: c.description, follow_up_question: c.follow_up_question, status: c.status })),
+    contradictions: finalContradictionsXV.map((c) => ({ id: c.id, description: c.description, follow_up_question: c.follow_up_question, status: c.status })),
     scores: scoreMap,
+    sjt: scoreMap["sjt"] ? scoreMap["sjt"].scores : null,
+    career_drivers: scoreMap["career_drivers"] ? scoreMap["career_drivers"].scores : null,
+    cross_validation: crossFlags,
     simulations: simResults,
   };
 
@@ -135,6 +159,10 @@ async function buildBundle() {
       wildcard_hypotheses_summary: reportData.wildcard_hypotheses_summary,
       weak_fit_directions: reportData.weak_fit_directions,
       what_we_still_do_not_know: reportData.what_we_still_do_not_know,
+      motivational_drivers: reportData.motivational_drivers,
+      sjt_behavioral_patterns: reportData.sjt_behavioral_patterns,
+      where_tests_disagree: reportData.where_tests_disagree,
+      cross_validation: crossFlags.map((f) => ({ type: f.type, description: f.description, follow_up_question: f.follow_up_question })),
     },
     education_direction: { type: reportData.education_direction_type, implication: reportData.education_implication },
     experiments: reportData.experiments || [],
