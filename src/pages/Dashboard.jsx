@@ -2,10 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
-import { MODULES, PHASES } from "@/data/modules";
-import { Check, ChevronRight, Lock, Sparkles } from "lucide-react";
-import ProgressTracker from "@/components/ProgressTracker";
-import Layout from "@/components/Layout";
+import { SESSIONS, isSessionComplete, firstIncompleteInSession, modulesForSession } from "@/data/modules";
+import { Check, ChevronRight, Lock, Sparkles, Clock } from "lucide-react";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -14,16 +12,19 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
     (async () => {
       try {
         const p = await base44.entities.Profile.filter({}).then((r) => r[0]);
         const s = await base44.entities.AssessmentSession.list();
+        if (!active) return;
         setProfile(p);
         setSessions(s);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     })();
+    return () => { active = false; };
   }, []);
 
   const statusOf = (id) => {
@@ -33,85 +34,157 @@ export default function Dashboard() {
     return "new";
   };
 
-  const completedCount = MODULES.filter((m) => statusOf(m.id) === "complete").length;
-  const allComplete = completedCount === MODULES.length;
-  const inProgressAny = MODULES.some((m) => statusOf(m.id) === "in_progress");
+  const sessionStatus = (s) => {
+    if (isSessionComplete(s.id, statusOf)) return "complete";
+    if (s.modules.some((m) => statusOf(m) === "in_progress" || statusOf(m) === "complete")) return "in_progress";
+    return "new";
+  };
 
-  const firstUnfinished = MODULES.find((m) => statusOf(m.id) !== "complete");
+  const allSessionsComplete = SESSIONS.every((s) => sessionStatus(s) === "complete");
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-20">
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <div>
         <p className="text-sm text-muted-foreground mb-1">
-          {profile?.first_name ? `Welcome back, ${profile.first_name}.` : "Welcome."}
+          {profile?.first_name ? `Witaj z powrotem, ${profile.first_name}.` : "Witaj."}
         </p>
-        <h1 className="font-heading text-3xl sm:text-4xl leading-tight">Your career compass.</h1>
+        <h1 className="font-heading text-3xl sm:text-4xl leading-tight">Career Compass</h1>
         <p className="mt-3 text-muted-foreground leading-relaxed max-w-xl">
-          We collect evidence before conclusions. Move through each module at your own pace —
-          your progress saves automatically.
+          Cztery krótkie sesje. Każda trwa 20–30 minut i zapisuje się sama — możesz przerwać w dowolnym momencie i wrócić później.
         </p>
-        <div className="mt-5 flex items-center gap-3">
-          <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-            <div className="h-full bg-primary transition-all duration-500" style={{ width: `${(completedCount / MODULES.length) * 100}%` }} />
-          </div>
-          <span className="text-sm text-muted-foreground tabular-nums">{completedCount}/{MODULES.length}</span>
-        </div>
       </div>
 
-      <ProgressTracker modules={MODULES} statusOf={statusOf} />
+      <div className="space-y-3">
+        {SESSIONS.map((s) => {
+          const status = sessionStatus(s);
+          const mods = modulesForSession(s.id);
+          const doneCount = mods.filter((m) => statusOf(m.id) === "complete").length;
+          const pct = Math.round((doneCount / mods.length) * 100);
+          const next = firstIncompleteInSession(s.id, statusOf);
 
-      <div className="space-y-2">
-        {MODULES.map((m, idx) => {
-          const status = statusOf(m.id);
-          const locked = false; // all open modules accessible; gating only on results
           return (
-            <Link
-              key={m.id}
-              to={locked ? "#" : m.route}
-              className={`block rounded-2xl border bg-card p-5 transition-all ${status === "complete" ? "border-border opacity-90" : "border-border hover:border-primary/40 hover:shadow-sm"} ${locked ? "opacity-50 pointer-events-none" : ""}`}
+            <div
+              key={s.id}
+              className={`rounded-2xl border bg-card p-5 transition-all ${
+                status === "complete" ? "border-primary/30" : "border-border hover:shadow-sm"
+              }`}
             >
-              <div className="flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${status === "complete" ? "bg-primary text-primary-foreground" : status === "in_progress" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
-                  {status === "complete" ? <Check className="w-5 h-5" /> : <span className="text-sm font-medium">{idx + 1}</span>}
+              <div className="flex items-start gap-4">
+                <div
+                  className={`w-12 h-12 shrink-0 flex items-center justify-center rounded-full ${
+                    status === "complete" ? "bg-primary text-primary-foreground" : status === "in_progress" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {status === "complete" ? <Check className="w-6 h-6" /> : <span className="font-heading text-lg">{s.n}</span>}
                 </div>
+
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-medium text-foreground truncate">{m.label}</h3>
-                    {status === "in_progress" && <span className="text-xs text-primary">In progress</span>}
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <h3 className="font-heading text-lg text-foreground">{s.label}</h3>
+                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                      <Clock className="w-3 h-3" /> {s.duration}
+                    </span>
+                    <span
+                      className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                        status === "complete"
+                          ? "bg-primary/10 text-primary"
+                          : status === "in_progress"
+                          ? "bg-primary/10 text-primary"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {status === "complete" ? "Ukończona" : status === "in_progress" ? "W trakcie" : "Nie rozpoczęta"}
+                    </span>
                   </div>
-                  <p className="text-sm text-muted-foreground truncate">{m.subtitle}</p>
+                  <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">{s.subtitle}</p>
+
+                  <div className="mt-3 flex items-center gap-2">
+                    <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full bg-primary transition-all duration-500" style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="text-xs text-muted-foreground tabular-nums">{doneCount}/{mods.length}</span>
+                  </div>
+
+                  {status === "complete" && (
+                    <p className="text-sm text-primary mt-3 leading-relaxed">{s.completeText}</p>
+                  )}
+
+                  <div className="mt-4">
+                    {status === "complete" ? (
+                      <CompletedCTA sessions={SESSIONS} current={s} statusOf={statusOf} />
+                    ) : (
+                      <Link
+                        to={next ? next.route : "#"}
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:gap-2.5 transition-all"
+                      >
+                        {status === "in_progress" ? "Kontynuuj" : "Rozpocznij"}
+                        {next && <span className="text-muted-foreground">— {next.label}</span>}
+                        <ChevronRight className="w-4 h-4" />
+                      </Link>
+                    )}
+                  </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0" />
               </div>
-            </Link>
+            </div>
           );
         })}
       </div>
 
-      <div className={`rounded-2xl border p-6 transition-all ${allComplete ? "border-primary/40 bg-primary/5" : "border-dashed border-border bg-card opacity-60"}`}>
+      {/* Your Career Compass — locked until 4 sessions done */}
+      <div
+        className={`rounded-2xl border p-6 transition-all ${
+          allSessionsComplete ? "border-primary/40 bg-primary/5" : "border-dashed border-border bg-card"
+        }`}
+      >
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-primary/10 text-primary">
-            {allComplete ? <Sparkles className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
+            {allSessionsComplete ? <Sparkles className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
           </div>
           <div className="flex-1">
-            <h3 className="font-medium text-foreground mb-1">Analysis & Results</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              {allComplete
-                ? "All modules complete. Let's generate your Career DNA, hypotheses, and report."
-                : `Complete all ${MODULES.length} modules to unlock your results. We never reveal career hypotheses before the evidence is collected.`}
+            <h3 className="font-heading text-xl text-foreground mb-1">Your Career Compass</h3>
+            <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+              {allSessionsComplete
+                ? "Wszystkie sesje ukończone. Generujemy Twój Career DNA, hipotezy zawodowe i raport."
+                : "Odblokowane po ukończeniu 4 sesji. Tworzymy wnioski dopiero po zebraniu dowodów."}
             </p>
-            {allComplete ? (
-              <Link to="/app/analysis" className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:gap-3 transition-all">
-                Generate my results <ChevronRight className="w-4 h-4" />
+            {allSessionsComplete ? (
+              <Link
+                to="/app/analysis"
+                className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:gap-3 transition-all"
+              >
+                Przejdź do wyników <ChevronRight className="w-4 h-4" />
               </Link>
-            ) : firstUnfinished ? (
-              <Link to={firstUnfinished.route} className="inline-flex items-center gap-2 text-sm font-medium text-primary">
-                Continue: {firstUnfinished.label} <ChevronRight className="w-4 h-4" />
-              </Link>
-            ) : null}
+            ) : (
+              <p className="text-xs text-muted-foreground">Ukończ: {SESSIONS.map((s) => s.label).join(" · ")}</p>
+            )}
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function CompletedCTA({ sessions, current, statusOf }) {
+  if (current.n === sessions.length) {
+    return (
+      <Link to="/app/analysis" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:gap-2.5 transition-all">
+        Przejdź do wyników <ChevronRight className="w-4 h-4" />
+      </Link>
+    );
+  }
+  const nextSession = sessions[current.n]; // 1-based n → 0-based index = n is next session
+  const nextMod = firstIncompleteInSession(nextSession.id, statusOf);
+  return (
+    <Link to={nextMod ? nextMod.route : "/app"} className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:gap-2.5 transition-all">
+      Przejdź do sesji {current.n + 1} {nextMod && <span className="text-muted-foreground">— {nextMod.label}</span>} <ChevronRight className="w-4 h-4" />
+    </Link>
   );
 }

@@ -1,20 +1,43 @@
-import React from "react";
+import React, { useState } from "react";
 import Layout, { NoReport, useReport, ResultNav } from "@/pages/CareerDna";
-import { Loader2 } from "lucide-react";
+import { Loader2, Download, FileDown } from "lucide-react";
+import { downloadReportPdf } from "@/lib/exportReportPdf";
 
 export default function FinalReport() {
   const { report, loading } = useReport();
+  const [exporting, setExporting] = useState(false);
   if (loading) return <Layout><div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div></Layout>;
   if (!report) return <Layout><NoReport /></Layout>;
 
   const s = report.sections || {};
 
+  async function handleExport() {
+    setExporting(true);
+    try {
+      await downloadReportPdf(report);
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <Layout>
       <div className="max-w-2xl mx-auto">
         <ResultNav active="report" />
-        <h1 className="font-heading text-3xl mb-2">Your Final Report</h1>
-        <p className="text-muted-foreground mb-8">The evidence as it currently stands. Not a verdict.</p>
+        <div className="flex items-start justify-between gap-4 mb-8">
+          <div>
+            <h1 className="font-heading text-3xl mb-2">Your Final Report</h1>
+            <p className="text-muted-foreground">The evidence as it currently stands. Not a verdict.</p>
+          </div>
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-4 h-9 text-sm font-medium hover:bg-primary/90 disabled:opacity-60 shrink-0"
+          >
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+            Pobierz PDF
+          </button>
+        </div>
 
         <div className="space-y-6">
           <Section title="Executive Summary">

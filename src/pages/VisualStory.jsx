@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { Loader2, Sparkles, ImageIcon, AlertCircle } from "lucide-react";
+import { Loader2, Sparkles, ImageIcon, AlertCircle, RotateCw, Download } from "lucide-react";
 
 export default function VisualStory() {
   const [reportId, setReportId] = useState(null);
@@ -11,6 +11,12 @@ export default function VisualStory() {
   const [stage, setStage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [regenId, setRegenId] = useState(null);
+
+  const refresh = async (id) => {
+    const a = await base44.entities.GeneratedVisualAsset.filter({ report_id: id });
+    setAssets(a.sort((x, y) => x.slide_number - y.slide_number));
+  };
 
   useEffect(() => {
     (async () => {
@@ -35,8 +41,7 @@ export default function VisualStory() {
     setStage("Analysing your report…");
     try {
       const r = await base44.functions.invoke("runVisualStoryPipeline", { report_id: reportId });
-      const a = await base44.entities.GeneratedVisualAsset.filter({ report_id: reportId });
-      setAssets(a.sort((x, y) => x.slide_number - y.slide_number));
+      await refresh(reportId);
       if (!r?.data?.ok) throw new Error(r?.data?.error || "Pipeline failed");
     } catch (e) {
       setError(e.message);
@@ -44,6 +49,37 @@ export default function VisualStory() {
       setRunning(false);
       setStage("");
     }
+  }
+
+  async function regenSlide(slide_number) {
+    setRegenId(slide_number);
+    setError("");
+    try {
+      const r = await base44.functions.invoke("renderSingleSlide", { report_id: reportId, slide_number });
+      if (!r?.data?.asset && r?.data?.error) throw new Error(r.data.error);
+      await base44.entities.GeneratedVisualAsset.filter({ report_id: reportId }).then((a) =>
+        setAssets(a.sort((x, y) => x.slide_number - y.slide_number))
+      );
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setRegenId(null);
+    }
+  }
+
+  function downloadAsset(asset, index) {
+    if (!asset.generated_asset_url) return;
+    const a = document.createElement("a");
+    a.href = asset.generated_asset_url;
+    a.download = `career-compass-slide-${index + 1}.png`;
+    a.target = "_blank";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  function downloadAll() {
+    assets.forEach((a, i) => setTimeout(() => downloadAsset(a, i), i * 400));
   }
 
   return (
@@ -91,7 +127,12 @@ export default function VisualStory() {
 
         {assets.length > 0 && !running && (
           <div className="grid gap-6">
-            {assets.map((a) => (
+            <div className="flex justify-end">
+              <Button onClick={downloadAll} disabled={!assets.some((a) => a.generated_asset_url)} className="rounded-full gap-2">
+                <Download className="w-4 h-4" /> Pobierz wszystkie grafiki
+              </Button>
+            </div>
+            {assets.map((a, i) => (
               <div key={a.id} className="rounded-2xl border border-border bg-card overflow-hidden">
                 <div className="aspect-[3/2] bg-muted">
                   {a.generated_asset_url ? (
@@ -106,13 +147,35 @@ export default function VisualStory() {
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs text-muted-foreground tabular-nums">Slide {a.slide_number}</span>
                     {a.generation_status === "failed" && <span className="text-xs text-destructive">failed</span>}
+                    {a.validation_status === "valid" && <span className="text-xs text-primary">validated</span>}
                   </div>
-                  <h3 className="font-heading text-lg">{a.title}</h3>
+                  <h3 className="font-heading text-lg mb-3">{a.title}</h3>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => regenSlide(a.slide_number)}
+                      disabled={regenId === a.slide_number}
+                      className="rounded-full gap-2"
+                    >
+                      {regenId === a.slide_number ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCw className="w-4 h-4" />}
+                      Wygeneruj ponownie
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => downloadAsset(a, i)}
+                      disabled={!a.generated_asset_url}
+                      className="rounded-full gap-2"
+                    >
+                      <Download className="w-4 h-4" /> Pobierz
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}
             <div className="flex justify-center pt-2">
-              <Button variant="outline" onClick={runPipeline} className="rounded-full">Regenerate</Button>
+              <Button variant="outline" onClick={runPipeline} className="rounded-full">Regeneruj całość</Button>
             </div>
           </div>
         )}

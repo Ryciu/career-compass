@@ -25,6 +25,8 @@ export default async function (req: Request): Promise<Response> {
     steps.briefs = b?.data;
     const p = await base44.functions.invoke('generateImagePrompts', { report_id });
     steps.prompts = p?.data;
+    const v = await base44.functions.invoke('validateSlideContent', { report_id });
+    steps.validate = v?.data;
     const r = await base44.functions.invoke('renderVisualSlides', { report_id });
     steps.render = r?.data;
 
