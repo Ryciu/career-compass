@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import VoiceQuestion from "@/components/VoiceQuestion";
 import { QUESTION_TEXT, questionIndex } from "@/data/coachQuestions";
+import { afterModule } from "@/lib/sessionRun";
 import { Loader2, Check, Pencil, X, ChevronRight, MessageSquare } from "lucide-react";
 
 const MODULE_MAP = {
@@ -168,7 +169,7 @@ export default function OpenModule() {
     if (session && session.status !== "complete") {
       await base44.entities.AssessmentSession.update(session.id, { status: "complete", completed_at: new Date().toISOString() });
     }
-    navigate("/app");
+    afterModule(navigate);
   }
 
   if (loading) {

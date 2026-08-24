@@ -6,6 +6,7 @@ import { scoreSjt } from "@/lib/structuredScoring";
 import { shuffle as shuffleArr } from "@/lib/scoring";
 import ModuleShell from "@/components/ModuleShell";
 import { Button } from "@/components/ui/button";
+import { afterModule } from "@/lib/sessionRun";
 import { Loader2, Check, ChevronLeft, ChevronRight } from "lucide-react";
 
 const TOTAL = SJT_SCENARIOS.length;
@@ -79,7 +80,7 @@ export default function SituationalJudgment() {
           <p className="text-xs text-muted-foreground mt-4">
             This is an exploratory career tool. It is not a clinical, diagnostic, certified, or scientifically definitive psychometric test.
           </p>
-          <Button onClick={() => navigate("/app")} className="rounded-full h-11 px-6 mt-6">Back to dashboard</Button>
+          <Button onClick={() => afterModule(navigate)} className="rounded-full h-11 px-6 mt-6">Back to dashboard</Button>
         </div>
       </ModuleShell>
     );

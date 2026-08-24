@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { SIMULATIONS } from "@/data/assessment";
 import ModuleShell from "@/components/ModuleShell";
 import { Button } from "@/components/ui/button";
+import { afterModule } from "@/lib/sessionRun";
 import { Loader2, Check, ChevronLeft, Pencil } from "lucide-react";
 
 const ORDER = ["business", "interior", "sport", "digital"];
@@ -175,7 +176,7 @@ export default function Simulations() {
           })}
         </div>
         <div className="flex items-center justify-center gap-3">
-          <Button onClick={() => navigate("/app")} variant="outline" className="rounded-full h-12 px-6">Back to dashboard</Button>
+          <Button onClick={() => afterModule(navigate)} variant="outline" className="rounded-full h-12 px-6">Back to dashboard</Button>
         </div>
       </div>
     );

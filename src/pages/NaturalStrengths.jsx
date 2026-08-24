@@ -5,6 +5,7 @@ import { STRENGTH_ITEMS } from "@/data/strengths";
 import { scoreStrengths } from "@/lib/strengthScoring";
 import ModuleShell from "@/components/ModuleShell";
 import { Button } from "@/components/ui/button";
+import { afterModule } from "@/lib/sessionRun";
 import { Loader2, Check, ChevronLeft, ChevronRight } from "lucide-react";
 
 const TOTAL = STRENGTH_ITEMS.length;
@@ -86,7 +87,7 @@ export default function NaturalStrengths() {
           <p className="text-xs text-muted-foreground mt-4">
             This is an exploratory Career Compass framework. It is not a clinical, diagnostic, certified, or scientifically definitive psychometric test.
           </p>
-          <Button onClick={() => navigate("/app")} className="rounded-full h-11 px-6 mt-6">Back to dashboard</Button>
+          <Button onClick={() => afterModule(navigate)} className="rounded-full h-11 px-6 mt-6">Back to dashboard</Button>
         </div>
       </ModuleShell>
     );
