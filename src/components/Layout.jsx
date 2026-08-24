@@ -15,8 +15,11 @@ export default function Layout({ children }) {
       try {
         const sessions = await base44.entities.AssessmentSession.list();
         const modules = ["session1", "sport", "gaming", "money", "decision_ownership", "riasec", "work_style", "values", "simulations", "sjt", "career_drivers"];
-        const done = sessions.filter((s) => s.status === "complete");
-        const pct = Math.round((done.length / modules.length) * 100);
+        const moduleSet = new Set(modules);
+        const doneModules = new Set(
+          sessions.filter((s) => s.status === "complete" && moduleSet.has(s.module)).map((s) => s.module)
+        );
+        const pct = Math.min(100, Math.round((doneModules.size / modules.length) * 100));
         if (active) setProgress(pct);
       } catch {}
     })();
