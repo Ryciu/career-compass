@@ -265,6 +265,7 @@ export default function Analysis() {
               <Button onClick={() => navigate("/app/career-dna")} variant="default" className="rounded-full h-11">View Career DNA</Button>
               <Button onClick={() => navigate("/app/hypotheses")} variant="outline" className="rounded-full h-11">Career Hypotheses</Button>
               <Button onClick={() => navigate("/app/report")} variant="outline" className="rounded-full h-11">Final Report</Button>
+              <Button onClick={() => navigate("/app/visual-story")} variant="outline" className="rounded-full h-11">Visual Story</Button>
             </div>
           </div>
         )}

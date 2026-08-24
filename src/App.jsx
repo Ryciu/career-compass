@@ -26,6 +26,7 @@ import Education from '@/pages/Education';
 import Experiments from '@/pages/Experiments';
 import ActionPlan from '@/pages/ActionPlan';
 import FinalReport from '@/pages/FinalReport';
+import VisualStory from '@/pages/VisualStory';
 import Admin from '@/pages/Admin';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -84,6 +85,7 @@ const AuthenticatedApp = () => {
         <Route path="/app/experiments" element={<Experiments />} />
         <Route path="/app/action-plan" element={<ActionPlan />} />
         <Route path="/app/report" element={<FinalReport />} />
+        <Route path="/app/visual-story" element={<Layout><VisualStory /></Layout>} />
         <Route path="/admin" element={<Admin />} />
       </Route>
 
