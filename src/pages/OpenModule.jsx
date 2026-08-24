@@ -191,7 +191,9 @@ export default function OpenModule() {
               return (
                 <div key={r.question_id} className="rounded-2xl border border-primary/40 bg-card p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-primary font-medium">Editing answer {i + 1}</span>
+                    <span className="text-xs text-primary font-medium">
+                      Question {questionIndex(moduleKey, r.question_id) || i + 1}
+                    </span>
                     <Button variant="ghost" size="sm" onClick={() => setEditingId(null)} className="h-7 px-2 text-muted-foreground gap-1">
                       <X className="w-3.5 h-3.5" /> Cancel
                     </Button>
@@ -206,23 +208,34 @@ export default function OpenModule() {
               );
             }
             return (
-              <div key={r.question_id} className="rounded-2xl border border-border bg-card p-5">
+              <div key={r.question_id} className="rounded-2xl border border-border bg-card p-5 hover:border-primary/30 transition-colors">
                 <div className="flex items-start justify-between gap-3">
-                  <p className="font-heading text-base text-foreground leading-snug">{r.question_text}</p>
-                  <Button variant="ghost" size="sm" onClick={() => { setEditingId(r.question_id); setCurrent(null); }} className="h-7 px-2 text-muted-foreground hover:text-primary shrink-0 gap-1">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <span className="shrink-0 mt-0.5 inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-medium tabular-nums">
+                      {questionIndex(moduleKey, r.question_id) || "·"}
+                    </span>
+                    <p className="font-heading text-[17px] text-foreground leading-snug">{r.question_text}</p>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => { setEditingId(r.question_id); setCurrent(null); }} className="h-8 px-2.5 text-muted-foreground hover:text-primary shrink-0 gap-1.5">
                     <Pencil className="w-3.5 h-3.5" /> Edit
                   </Button>
                 </div>
-                {r.first_response ? (
-                  <p className="mt-3 text-[15px] leading-relaxed text-foreground/90 whitespace-pre-line">{r.first_response}</p>
-                ) : (
-                  <p className="mt-3 text-sm text-muted-foreground italic">No answer recorded yet.</p>
-                )}
-                {r.reflection_response && (
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground whitespace-pre-line border-t border-border pt-2">
-                    <span className="text-muted-foreground/80">Reflection: </span>{r.reflection_response}
-                  </p>
-                )}
+                <div className="mt-3 pl-10">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <MessageSquare className="w-3.5 h-3.5 text-muted-foreground/70" />
+                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground/70">Your answer</span>
+                  </div>
+                  {r.first_response ? (
+                    <p className="text-[15px] leading-relaxed text-foreground/90 whitespace-pre-line">{r.first_response}</p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">No answer recorded yet.</p>
+                  )}
+                  {r.reflection_response && (
+                    <p className="mt-3 text-sm leading-relaxed text-muted-foreground whitespace-pre-line border-t border-border pt-3">
+                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground/70 block mb-1">Reflection</span>{r.reflection_response}
+                    </p>
+                  )}
+                </div>
               </div>
             );
           })}
