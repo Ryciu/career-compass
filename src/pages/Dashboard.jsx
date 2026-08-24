@@ -27,9 +27,9 @@ export default function Dashboard() {
   }, []);
 
   const statusOf = (id) => {
-    const s = sessions.find((x) => x.module === id);
-    if (s?.status === "complete") return "complete";
-    if (s?.status === "in_progress") return "in_progress";
+    const forModule = sessions.filter((x) => x.module === id);
+    if (forModule.some((s) => s.status === "complete")) return "complete";
+    if (forModule.some((s) => s.status === "in_progress")) return "in_progress";
     return "new";
   };
 

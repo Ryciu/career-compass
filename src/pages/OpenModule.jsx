@@ -184,7 +184,14 @@ export default function OpenModule() {
         <div className="space-y-3 mb-8">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-medium text-muted-foreground">Your saved answers</h2>
-            <span className="text-xs text-muted-foreground tabular-nums">{responses.length} answered</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground tabular-nums">{responses.length} answered</span>
+              {!editingId && (
+                <Button onClick={completeModule} size="sm" className="h-8 rounded-full gap-1.5">
+                  <Check className="w-3.5 h-3.5" /> Save & complete
+                </Button>
+              )}
+            </div>
           </div>
           {responses.map((r, i) => {
             if (editingId === r.question_id) {
