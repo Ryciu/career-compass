@@ -5,7 +5,7 @@
 //  - if jsonSchema is provided, returns a parsed object (schema root must be type "object");
 //  - otherwise returns a string.
 
-export const LLM_MODEL = "gpt_5_6_sol";
+export const LLM_MODEL = "claude-sonnet-5";
 
 interface ResponsesChatArgs {
   base44: any;
