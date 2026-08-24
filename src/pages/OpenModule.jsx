@@ -25,22 +25,19 @@ export default function OpenModule() {
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false); // session marked complete
   const [editingId, setEditingId] = useState(null); // question_id open for explicit edit
+  const [skipped, setSkipped] = useState([]); // question_ids advanced past without answering
 
   const loadOrStart = useCallback(async () => {
     setLoading(true);
     setEditingId(null);
+    setSkipped([]);
     try {
-      // Load the most recent session for this module (ANY status) so that
-      // re-entry restores previously saved answers instead of starting blank.
-      let sessions = await base44.entities.AssessmentSession.filter({ module: moduleKey }, "-created_date");
-      let s = sessions[0];
-      if (!s) {
-        s = await base44.entities.AssessmentSession.create({ module: moduleKey, status: "in_progress", started_at: new Date().toISOString() });
-      }
-      setSession(s);
-
-      const existing = await base44.entities.Response.filter({ session_id: s.id }, "-created_date");
-      const mapped = existing.map((r) => ({
+      // Module-scoped restore: collect EVERY response ever given for this module
+      // (newest per question), across any session, so re-entry never shows blank.
+      const all = await base44.entities.Response.filter({ module: moduleKey }, "-created_date");
+      const byId = new Map();
+      all.forEach((r) => { if (r.question_id && !byId.has(r.question_id)) byId.set(r.question_id, r); });
+      const mapped = [...byId.values()].map((r) => ({
         question_id: r.question_id,
         question_text: r.question_text || r.question_id,
         first_response: r.first_response || "",
@@ -49,7 +46,14 @@ export default function OpenModule() {
       }));
       setResponses(mapped);
 
-      // If the session is complete, stop here (review mode). Otherwise fetch next.
+      // Active session: prefer an in_progress one (to continue), else newest.
+      let sessions = await base44.entities.AssessmentSession.filter({ module: moduleKey }, "-created_date");
+      let s = sessions.find((x) => x.status === "in_progress") || sessions[0];
+      if (!s) {
+        s = await base44.entities.AssessmentSession.create({ module: moduleKey, status: "in_progress", started_at: new Date().toISOString() });
+      }
+      setSession(s);
+
       if (s.status === "complete") {
         setDone(true);
         setCurrent(null);
@@ -83,6 +87,22 @@ export default function OpenModule() {
   }
 
   useEffect(() => { loadOrStart(); }, [loadOrStart]);
+
+  // Advance to the next question WITHOUT answering the current one, so the
+  // user can move through individual questions instead of being forced to
+  // complete the whole module before reviewing/editing.
+  function skipQuestion() {
+    if (!current) return;
+    const id = current.question_id;
+    const payload = [
+      ...responses.map((r) => ({ question_id: r.question_id, first_response: r.first_response, reflection_response: r.reflection_response })),
+      { question_id: id, first_response: "", reflection_response: "" },
+    ];
+    if (!skipped.includes(id)) setSkipped((p) => [...p, id]);
+    setCurrent(null);
+    setLoading(true);
+    fetchNext(session.id, payload).finally(() => setLoading(false));
+  }
 
   async function handleSave(data) {
     setSaving(true);
@@ -229,6 +249,9 @@ export default function OpenModule() {
               firstInstinct={current.first_instinct}
               onSave={handleSave}
             />
+            <Button variant="ghost" onClick={skipQuestion} className="w-full text-muted-foreground">
+              Skip to next question
+            </Button>
           </>
         ) : (
           <div className="flex flex-col items-center py-12 gap-3">
