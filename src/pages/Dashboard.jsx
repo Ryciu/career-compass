@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { MODULES, PHASES } from "@/data/modules";
 import { Check, ChevronRight, Lock, Sparkles } from "lucide-react";
+import ProgressTracker from "@/components/ProgressTracker";
 import Layout from "@/components/Layout";
 
 export default function Dashboard() {
@@ -56,6 +57,8 @@ export default function Dashboard() {
           <span className="text-sm text-muted-foreground tabular-nums">{completedCount}/{MODULES.length}</span>
         </div>
       </div>
+
+      <ProgressTracker modules={MODULES} statusOf={statusOf} />
 
       <div className="space-y-2">
         {MODULES.map((m, idx) => {
