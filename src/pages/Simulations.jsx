@@ -8,6 +8,20 @@ import { Loader2, Check } from "lucide-react";
 
 const ORDER = ["business", "interior", "sport", "digital", "wildcard"];
 
+// Concrete micro-task for each wildcard domain, so the user knows what to actually do.
+const WILDCARD_TASKS = {
+  "sales": "A potential client is unsure about a product that costs AUD 1,200/year. Write the opening message you'd send to start the conversation, and the one question you'd ask first.",
+  "real estate": "A young couple with a AUD 600k budget wants their first home but can't choose between a city apartment and a house further out. Draft how you'd help them decide in the first 20-minute call.",
+  "event management": "You have 3 weeks and AUD 3,000 to organise a 60-person networking evening for under-25s in Brisbane. Outline the plan, the biggest risk, and how you'd handle it.",
+  "project management": "A 3-person student team is 2 weeks behind on a 6-week app build. Write how you'd get them back on track this week.",
+  "operations": "A small café is losing money on food waste. Describe what you'd measure this week and the first change you'd test.",
+  "marketing": "Launch a 2-week campaign to get 100 Brisbane students to try a new study app with zero paid ads. Describe the idea and what you'd post first.",
+  "data/analysis": "You get a spreadsheet of 500 customer orders. Tell me the first three questions you'd try to answer from it, and why each matters.",
+  "hospitality": "A guest messages at 11pm upset that their room is noisy and they can't sleep. Write your reply and the next step you'd take with the hotel.",
+  "content creation": "You have 1 week to grow a short-form video account about everyday fitness for 18–25s to its first real followers. Outline the content angle and your first three video ideas.",
+  "product management": "Students complain an app is confusing. Describe how you'd decide what to fix first, and how you'd know the change worked.",
+};
+
 export default function Simulations() {
   const navigate = useNavigate();
   const [idx, setIdx] = useState(0);
@@ -52,7 +66,7 @@ export default function Simulations() {
       // Evaluate in background (non-blocking) — never lose the answer if eval fails
       base44.functions.invoke("evaluateSimulation", {
         simulation_type: simKey,
-        prompt: simKey === "wildcard" ? `${sim.prompt} Domain: ${wildcardDomain}.` : sim.prompt,
+        prompt: simKey === "wildcard" ? `${sim.prompt} Domain: ${wildcardDomain}.\n\n${WILDCARD_TASKS[wildcardDomain] || ""}` : sim.prompt,
         response_text: response,
         follow_up_responses: followUps,
       }).then((res) => {
@@ -89,7 +103,10 @@ export default function Simulations() {
     );
   }
 
-  const fullPrompt = simKey === "wildcard" ? `${sim.prompt}\n\nYour domain: ${wildcardDomain}. Respond as if this were a real request in the ${wildcardDomain} domain.` : sim.prompt;
+  const wildcardTask = simKey === "wildcard" ? (WILDCARD_TASKS[wildcardDomain] || "") : "";
+  const fullPrompt = simKey === "wildcard"
+    ? `${sim.prompt}\n\nYour domain: ${wildcardDomain}.\n\n${wildcardTask}`
+    : sim.prompt;
 
   return (
     <ModuleShell
@@ -99,6 +116,11 @@ export default function Simulations() {
       totalSteps={ORDER.length}
     >
       <div className="rounded-2xl bg-card border border-border p-6 whitespace-pre-line text-[15px] leading-relaxed">{fullPrompt}</div>
+      {simKey === "wildcard" && (
+        <div className="rounded-xl bg-accent/60 border border-accent p-4 text-sm text-accent-foreground leading-relaxed">
+          <span className="font-medium">Why this task?</span> This simulation is deliberately placed in a field you haven't mentioned as an interest. We're not testing whether you already like it — we're checking for hidden strengths or unexpected enjoyment. Treat the scenario above as a real request, write what you'd actually do, then rate honestly how it felt. There are no wrong answers.
+        </div>
+      )}
 
       <div className="space-y-4 mt-5">
         <textarea
