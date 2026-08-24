@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { SIMULATIONS } from "@/data/assessment";
@@ -6,7 +6,7 @@ import ModuleShell from "@/components/ModuleShell";
 import { Button } from "@/components/ui/button";
 import { Loader2, Check } from "lucide-react";
 
-const ORDER = ["business", "interior", "sport", "digital", "wildcard"];
+const ORDER = ["business", "interior", "sport", "digital"];
 
 // Concrete micro-task for each wildcard domain, so the user knows what to actually do.
 const WILDCARD_TASKS = {
@@ -32,6 +32,42 @@ export default function Simulations() {
   const [repeat, setRepeat] = useState(5);
   const [saving, setSaving] = useState(false);
   const [allDone, setAllDone] = useState(false);
+  const [loadingInit, setLoadingInit] = useState(true);
+
+  // On mount, load saved simulations so a refresh/publish keeps finished steps
+  // and resumes from the first unfinished one.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const saved = await base44.entities.SimulationResult.list();
+        const map = {};
+        saved.forEach((r) => { if (r.simulation_type) map[r.simulation_type] = r; });
+        if (!active) return;
+        setResults(map);
+        const startIdx = ORDER.findIndex((t) => !map[t]);
+        if (startIdx === -1) {
+          setAllDone(true);
+          // ensure the simulations session is marked complete
+          try {
+            const session = (await base44.entities.AssessmentSession.filter({ module: "simulations" }))[0];
+            if (session) {
+              if (session.status !== "complete") await base44.entities.AssessmentSession.update(session.id, { status: "complete", completed_at: new Date().toISOString() });
+            } else {
+              await base44.entities.AssessmentSession.create({ module: "simulations", status: "complete", started_at: new Date().toISOString(), completed_at: new Date().toISOString() });
+            }
+          } catch {}
+        } else {
+          setIdx(startIdx);
+        }
+      } catch {
+        if (active) setIdx(0);
+      } finally {
+        if (active) setLoadingInit(false);
+      }
+    })();
+    return () => { active = false; };
+  }, []);
 
   const simKey = ORDER[idx];
   const sim = SIMULATIONS[simKey];
@@ -88,6 +124,14 @@ export default function Simulations() {
     } finally {
       setSaving(false);
     }
+  }
+
+  if (loadingInit) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   if (allDone) {
