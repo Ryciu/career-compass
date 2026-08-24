@@ -11,7 +11,7 @@ const M = 56; // margin
 const CW = PAGE_W - M * 2;
 const ACCENT = [42, 110, 84];
 
-export async function downloadReportPdf(report) {
+export async function downloadReportPdf(report, profileName) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   let y = M;
 
@@ -69,28 +69,49 @@ export async function downloadReportPdf(report) {
     y += 4;
   };
 
-  // ---- Cover ----
+  // ---- Cover (editorial) ----
+  doc.setFillColor(247, 246, 243);
+  doc.rect(0, 0, PAGE_W, PAGE_H, "F");
+
+  doc.setDrawColor(ACCENT[0], ACCENT[1], ACCENT[2]);
+  doc.setLineWidth(2);
+  doc.line(M, M + 30, M + 60, M + 30);
+
   doc.setFont("times", "normal");
   doc.setFontSize(11);
-  doc.setTextColor(120, 120, 120);
-  doc.text("Career Compass", M, M + 60);
+  doc.setTextColor(120, 110, 100);
+  doc.text("CAREER COMPASS", M, M + 48);
+
+  doc.setFont("times", "normal");
+  doc.setFontSize(12);
+  doc.setTextColor(140, 135, 128);
+  doc.text("Raport", PAGE_W - M, M + 48, { align: "right" });
 
   doc.setFont("times", "bold");
-  doc.setFontSize(40);
-  doc.setTextColor(20, 20, 20);
-  doc.text("Career Compass", M, M + 160);
-  doc.text("Report", M, M + 205);
+  doc.setFontSize(46);
+  doc.setTextColor(30, 28, 25);
+  doc.text("Twój", M, PAGE_H / 2 - 60);
+  doc.text("kierunek", M, PAGE_H / 2 - 10);
+  doc.setFont("times", "italic");
+  doc.text("z zawodami", M, PAGE_H / 2 + 40);
 
-  doc.setFont("times", "normal");
-  doc.setFontSize(14);
-  doc.setTextColor(80, 80, 80);
-  doc.text("Twój profil działania, motywacji i kierunków rozwoju", M, M + 240);
+  if (profileName) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.setTextColor(80, 78, 72);
+    doc.text("Przygotowane dla", M, PAGE_H / 2 + 120);
+    doc.setFont("times", "bold");
+    doc.setFontSize(22);
+    doc.setTextColor(30, 28, 25);
+    doc.text(profileName, M, PAGE_H / 2 + 145);
+  }
 
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  doc.setTextColor(120, 120, 120);
+  doc.setFontSize(10);
+  doc.setTextColor(120, 115, 108);
   const date = new Date().toLocaleDateString("pl-PL", { year: "numeric", month: "long", day: "numeric" });
-  doc.text(date, M, M + 300);
+  doc.text(date, M, PAGE_H - M + 10);
+  doc.text("Profil działania, motywacji i ścieżek rozwoju", PAGE_W - M, PAGE_H - M + 10, { align: "right" });
 
   doc.addPage();
   y = M;

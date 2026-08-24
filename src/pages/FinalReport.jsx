@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { base44 } from "@/api/base44Client";
 import Layout, { NoReport, useReport, ResultNav } from "@/pages/CareerDna";
 import { Loader2, Download, FileDown } from "lucide-react";
 import { downloadReportPdf } from "@/lib/exportReportPdf";
@@ -6,6 +7,15 @@ import { downloadReportPdf } from "@/lib/exportReportPdf";
 export default function FinalReport() {
   const { report, loading } = useReport();
   const [exporting, setExporting] = useState(false);
+  const [profileName, setProfileName] = useState("");
+  useEffect(() => {
+    (async () => {
+      try {
+        const p = await base44.entities.Profile.filter({});
+        if (p[0]?.first_name) setProfileName(p[0].first_name);
+      } catch {}
+    })();
+  }, []);
   if (loading) return <Layout><div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div></Layout>;
   if (!report) return <Layout><NoReport /></Layout>;
 
@@ -14,7 +24,7 @@ export default function FinalReport() {
   async function handleExport() {
     setExporting(true);
     try {
-      await downloadReportPdf(report);
+      await downloadReportPdf(report, profileName);
     } finally {
       setExporting(false);
     }
