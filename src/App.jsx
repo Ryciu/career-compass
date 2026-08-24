@@ -25,6 +25,7 @@ import Experiments from '@/pages/Experiments';
 import ActionPlan from '@/pages/ActionPlan';
 import FinalReport from '@/pages/FinalReport';
 import Admin from '@/pages/Admin';
+import SeedTestPersona from '@/pages/SeedTestPersona';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
