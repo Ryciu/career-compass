@@ -3,7 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import VoiceQuestion from "@/components/VoiceQuestion";
-import { Loader2, Check, Pencil, X, ChevronRight } from "lucide-react";
+import { QUESTION_TEXT, questionIndex } from "@/data/coachQuestions";
+import { Loader2, Check, Pencil, X, ChevronRight, MessageSquare } from "lucide-react";
 
 const MODULE_MAP = {
   "who-am-i": "session1",
@@ -39,7 +40,7 @@ export default function OpenModule() {
       all.forEach((r) => { if (r.question_id && !byId.has(r.question_id)) byId.set(r.question_id, r); });
       const mapped = [...byId.values()].map((r) => ({
         question_id: r.question_id,
-        question_text: r.question_text || r.question_id,
+        question_text: r.question_text || QUESTION_TEXT[r.question_id] || r.question_id,
         first_response: r.first_response || "",
         reflection_response: r.reflection_response || "",
         saved: r,
