@@ -3,10 +3,10 @@ import { responsesChat } from "../../shared/openai.ts";
 import { COACH_CORE } from "../../shared/coachInstructions.ts";
 
 // Generates the full Polish Markdown summary of the final report for the
-// admin/researcher view. This is split from generateFinalReport (which produces
-// only the English structured sections) so each LLM call finishes well under the
-// platform execution cap. Input: the same report bundle (evidence, contradictions,
-// scores, sjt, career_drivers, cross_validation, simulations, career_dna, hypotheses).
+// admin/researcher view. To stay well under the platform execution cap, it
+// consumes the ALREADY-GENERATED English structured report (plus career_dna and
+// hypotheses) rather than reprocessing all raw evidence — so the model just
+// translates/adapts a compact source instead of re-deriving everything.
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
@@ -14,33 +14,37 @@ export default async function(req: Request): Promise<Response> {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const bundle = body || {};
+    const enReport = body?.en_report || {};
+    const careerDna = body?.career_dna || {};
+    const hypotheses = body?.hypotheses || [];
 
     const task = `## TWOJE ZADANIE
 
-Napisz pełny raport po polsku w formacie Markdown dla administratora/badacza. Raport musi wiernie odzwierciedlać wnioski z dowodów użytkownika, zachowując ton FINAL (nigdy "Powinieneś zostać X", tylko "Najsilniejsza obecna hipoteza to…", "Dowody to potwierdzające to to…", "To pozostaje niepewne, ponieważ…", "Zanim podejmiesz kosztowną decyzję edukacyjną, przetestuj to przez…").
+Otrzymujesz gotowy, ustrukturyzowany raport w języku angielskim (pole en_report) oraz career_dna i hypotheses. Przetłumacz i zredaguj go jako pełny raport po polsku w formacie Markdown dla administratora/badacza. Wiernie oddaj treść — nie wymyślaj nowych wniosków; jeśli czegoś brakuje w źródle, pomiń tę sekcję lub zasygnalizuj krótko.
 
-Struktura raportu (Markdown z nagłówkami ## i ###):
-1. Podsumowanie wykonawcze
-2. Czego praca daje użytkownikowi energię (energizers)
-3. Udowodnione mocne strony
-4. Dopasowanie środowiska pracy
-5. Podsumowanie wartości
-6. Ważne sprzeczności w danych
-7. Hipotezy ścieżek zawodowych — 3 najsilniejsze (z: dlaczego może pasować, dowody, dowody przeciwnawe, czego nie wiemy, reality check, tani eksperyment, implikacja edukacyjna, pewność)
-8. Hipotezy dzikie karty — 2
-9. Kierunki o słabym dopasowaniu obecnie — do 3
-10. Sterowniki motywacyjne (z testu wymuszonego wyboru) — 3-5, z kategorią, interpretacją, dowodami, ewentualnym napięciem
-11. Wzorce behawioralne z testu oceny sytuacyjnej (SJT) — 4-6 istotnych, tylko poparte danymi
-12. Gdzie testy się nie zgadzają — wyraźnie nazwij rozbieżności jako użyteczną informację diagnostyczną
-13. Implikacja edukacyjna i rekomendowany typ kierunku (university_degree, vocational_vet, professional_certification, portfolio_based, work_experience, entrepreneurial_experiment, unclear_explore_first)
-14. 30-dniowy plan działania
-15. Kierunek na 12 miesięcy
-16. Czego nadal nie wiemy
+Zachowaj ton FINAL: nigdy "Powinieneś zostać X", tylko "Najsilniejsza obecna hipoteza to…", "Dowody to potwierdzające to…", "To pozostaje niepewne, ponieważ…", "Zanim podejmiesz kosztowną decyzję edukacyjną, przetestuj to przez…".
 
-CAUTION (PSYCHOMETRIC): ramy eksploracyjne — nigdy język kliniczny, diagnostyczny, certyfikowany ani "naukowo-definitywny". Nie diagnozuj stanów. Nie interpretuj nadmiernie małych różnic; rekomendacja zawodowa nie może opierać się na jednym teście strukturalnym — pewność rośnie dopiero, gdy wynik pojawia się w co najmniej DWÓCH niezależnych źródłach.
+Struktura Markdown (## / ###):
+1. Podsumowanie wykonawcze (en_report.executive_summary)
+2. Czego praca daje energię (en_report.energizers)
+3. Udowodnione mocne strony (en_report.demonstrated_strengths)
+4. Dopasowanie środowiska pracy (en_report.work_environment_fit)
+5. Podsumowanie wartości (en_report.values_summary)
+6. Ważne sprzeczności (en_report.important_contradictions)
+7. Hipotezy ścieżek zawodowych — 3 najsilniejsze (z hypotheses typu "strongest": dlaczego może pasować, dowody, dowody przeciwnawe, czego nie wiemy, reality check, tani eksperyment, implikacja edukacyjna, pewność)
+8. Hipotezy dzikie karty — 2 (z hypotheses typu "wildcard")
+9. Kierunki o słabym dopasowaniu obecnie — do 3 (en_report.weak_fit_directions oraz hypotheses typu "weak_current_fit")
+10. Sterowniki motywacyjne (en_report.motivational_drivers — z kategorią, interpretacją, dowodami, ewentualnym napięciem)
+11. Wzorce behawioralne z SJT (en_report.sjt_behavioral_patterns — 4-6, tylko poparte danymi)
+12. Gdzie testy się nie zgadzają (en_report.where_tests_disagree)
+13. Implikacja edukacyjna i rekomendowany typ kierunku (en_report.education_direction_type, en_report.education_implication)
+14. 30-dniowy plan działania (en_report.action_plan_30_day)
+15. Kierunek na 12 miesięcy (en_report.twelve_month_direction)
+16. Czego nadal nie wiemy (en_report.what_we_still_do_not_know)
 
-Zwróć wyłącznie pole full_markdown_pl zawierające cały powyższy raport jako jeden blok Markdown.`;
+CAUTION (PSYCHOMETRIC): ramy eksploracyjne — nigdy język kliniczny, diagnostyczny, certyfikowany ani "naukowo-definitywny". Nie diagnozuj stanów. Nie interpretuj nadmiernie małych różnic.
+
+Zwróć wyłącznie pole full_markdown_pl zawierające cały raport jako jeden blok Markdown (z nagłówkami i wypunktowaniami).`;
     const instructions = COACH_CORE + "\n\n---\n\n" + task;
 
     const schema = {
@@ -51,8 +55,12 @@ Zwróć wyłącznie pole full_markdown_pl zawierające cały powyższy raport ja
       required: ["full_markdown_pl"],
     };
 
-    const input = JSON.stringify(bundle);
+    const input = JSON.stringify({ en_report: enReport, career_dna: careerDna, hypotheses });
     const out = await responsesChat({ base44, instructions, input, jsonSchema: schema });
+    // If InvokeLLM returned a string that isn't valid JSON, wrap it.
+    if (typeof out === "string" && out.trim().startsWith("#")) {
+      return Response.json({ full_markdown_pl: out });
+    }
     return Response.json(out);
   } catch (error) {
     return Response.json({ error: error.message || 'Polish report error' }, { status: 500 });

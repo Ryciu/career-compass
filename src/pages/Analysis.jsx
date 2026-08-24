@@ -140,7 +140,7 @@ async function buildBundle() {
 
   let markdownPl = "";
   try {
-    const plRes = await base44.functions.invoke("generatePolishReport", reportBundle);
+    const plRes = await base44.functions.invoke("generatePolishReport", { en_report: reportData, career_dna: careerDna, hypotheses });
     markdownPl = plRes?.data?.full_markdown_pl || "";
   } catch {}
 
