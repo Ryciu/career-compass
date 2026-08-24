@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { MODULES, PHASES } from "@/data/modules";
-import { Check, ChevronRight, Lock, Sparkles, FileText } from "lucide-react";
+import { Check, ChevronRight, Lock, Sparkles } from "lucide-react";
 import ProgressTracker from "@/components/ProgressTracker";
 import Layout from "@/components/Layout";
 
@@ -13,17 +13,13 @@ export default function Dashboard() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [report, setReport] = useState(null);
-
   useEffect(() => {
     (async () => {
       try {
         const p = await base44.entities.Profile.filter({}).then((r) => r[0]);
         const s = await base44.entities.AssessmentSession.list();
-        const r = await base44.entities.Report.filter({});
         setProfile(p);
         setSessions(s);
-        setReport(r[0] || null);
       } finally {
         setLoading(false);
       }
@@ -91,28 +87,6 @@ export default function Dashboard() {
           );
         })}
       </div>
-
-      {report && (
-        <Link
-          to="/app/report-preview"
-          className="block rounded-2xl border border-primary/40 bg-primary/5 p-6 transition-all hover:shadow-sm"
-        >
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-primary text-primary-foreground">
-              <FileText className="w-5 h-5" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-medium text-foreground mb-1">Podgląd raportu (PDF)</h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                Your report is ready — view it in a clean, printable layout or download as PDF.
-              </p>
-              <span className="inline-flex items-center gap-2 text-sm font-medium text-primary">
-                Otwórz podgląd raportu <ChevronRight className="w-4 h-4" />
-              </span>
-            </div>
-          </div>
-        </Link>
-      )}
 
       <div className={`rounded-2xl border p-6 transition-all ${allComplete ? "border-primary/40 bg-primary/5" : "border-dashed border-border bg-card opacity-60"}`}>
         <div className="flex items-start gap-3">
