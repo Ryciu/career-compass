@@ -8,6 +8,9 @@
     "question_id": {
       "type": "string"
     },
+    "question_text": {
+      "type": "string"
+    },
     "module": {
       "type": "string"
     },

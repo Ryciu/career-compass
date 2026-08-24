@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import VoiceQuestion from "@/components/VoiceQuestion";
-import { Loader2, Check } from "lucide-react";
+import { Loader2, Check, Pencil, X, ChevronRight } from "lucide-react";
 
 const MODULE_MAP = {
   "who-am-i": "session1",
@@ -19,27 +19,44 @@ export default function OpenModule() {
   const navigate = useNavigate();
 
   const [session, setSession] = useState(null);
-  const [responses, setResponses] = useState([]); // [{question_id, question_text, first_response, reflection_response, ...}]
-  const [current, setCurrent] = useState(null); // current question { question_id, question_text, first_instinct, done }
+  const [responses, setResponses] = useState([]); // [{question_id, question_text, first_response, reflection_response, saved}]
+  const [current, setCurrent] = useState(null); // next unanswered question
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [done, setDone] = useState(false);
+  const [done, setDone] = useState(false); // session marked complete
+  const [editingId, setEditingId] = useState(null); // question_id open for explicit edit
 
   const loadOrStart = useCallback(async () => {
     setLoading(true);
+    setEditingId(null);
     try {
-      let s = (await base44.entities.AssessmentSession.filter({ module: moduleKey })).filter((x) => x.status === "in_progress")[0];
+      // Load the most recent session for this module (ANY status) so that
+      // re-entry restores previously saved answers instead of starting blank.
+      let sessions = await base44.entities.AssessmentSession.filter({ module: moduleKey }, "-created_date");
+      let s = sessions[0];
       if (!s) {
         s = await base44.entities.AssessmentSession.create({ module: moduleKey, status: "in_progress", started_at: new Date().toISOString() });
       }
       setSession(s);
-      const existing = await base44.entities.Response.filter({ session_id: s.id });
+
+      const existing = await base44.entities.Response.filter({ session_id: s.id }, "-created_date");
       const mapped = existing.map((r) => ({
-        question_id: r.question_id, question_text: r.meta_question_text || r.question_id,
-        first_response: r.first_response, reflection_response: r.reflection_response, saved: r,
+        question_id: r.question_id,
+        question_text: r.question_text || r.question_id,
+        first_response: r.first_response || "",
+        reflection_response: r.reflection_response || "",
+        saved: r,
       }));
       setResponses(mapped);
-      await fetchNext(s.id, mapped);
+
+      // If the session is complete, stop here (review mode). Otherwise fetch next.
+      if (s.status === "complete") {
+        setDone(true);
+        setCurrent(null);
+      } else {
+        setDone(false);
+        await fetchNext(s.id, mapped);
+      }
     } finally {
       setLoading(false);
     }
@@ -61,7 +78,6 @@ export default function OpenModule() {
         setCurrent({ question_id: out.question_id, question_text: out.question_text, first_instinct: out.first_instinct });
       }
     } catch (err) {
-      // graceful: if coach fails, fall back to a deterministic next question later
       console.error(err);
     }
   }
@@ -71,14 +87,33 @@ export default function OpenModule() {
   async function handleSave(data) {
     setSaving(true);
     try {
+      // Explicit edit of an existing answer
+      if (editingId) {
+        const ex = responses.find((r) => r.question_id === editingId);
+        if (ex?.saved?.id) {
+          const record = await base44.entities.Response.update(ex.saved.id, {
+            first_response: data.first_response,
+            reflection_response: data.reflection_response || "",
+            input_mode: data.input_mode,
+            audio_file_url: data.audio_file_url || "",
+            latency_ms: data.latency_ms,
+            audio_duration_seconds: data.audio_duration_seconds,
+          });
+          setResponses((prev) => prev.map((r) => r.question_id === editingId ? { ...r, first_response: record.first_response, reflection_response: record.reflection_response, saved: record } : r));
+        }
+        setEditingId(null);
+        return;
+      }
+
+      // New answer
       const existing = responses.find((r) => r.question_id === current.question_id && r.saved?.id);
       let record;
       if (existing?.saved?.id) {
-        // Never overwrite first_response. Update only reflection + metadata.
         record = await base44.entities.Response.update(existing.saved.id, {
-          reflection_response: data.reflection_response || existing.saved.reflection_response,
+          first_response: data.first_response,
+          reflection_response: data.reflection_response || "",
           input_mode: data.input_mode,
-          audio_file_url: data.audio_file_url || existing.saved.audio_file_url,
+          audio_file_url: data.audio_file_url || "",
           latency_ms: data.latency_ms,
           audio_duration_seconds: data.audio_duration_seconds,
         });
@@ -86,6 +121,7 @@ export default function OpenModule() {
         record = await base44.entities.Response.create({
           session_id: session.id,
           question_id: current.question_id,
+          question_text: current.question_text,
           module: moduleKey,
           first_response: data.first_response,
           reflection_response: data.reflection_response,
@@ -97,7 +133,7 @@ export default function OpenModule() {
       }
       const nextAnswered = [
         ...responses.filter((r) => r.question_id !== current.question_id),
-        { question_id: current.question_id, question_text: current.question_text, first_response: data.first_response, reflection_response: data.reflection_response, saved: record },
+        { question_id: current.question_id, question_text: current.question_text, first_response: record.first_response, reflection_response: record.reflection_response, saved: record },
       ];
       setResponses(nextAnswered);
       setCurrent(null);
@@ -108,7 +144,7 @@ export default function OpenModule() {
   }
 
   async function completeModule() {
-    if (session) {
+    if (session && session.status !== "complete") {
       await base44.entities.AssessmentSession.update(session.id, { status: "complete", completed_at: new Date().toISOString() });
     }
     navigate("/app");
@@ -118,41 +154,96 @@ export default function OpenModule() {
     return <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
   }
 
-  if (done) {
-    return (
-      <div className="max-w-xl mx-auto text-center py-12 animate-in fade-in">
-        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
-          <Check className="w-8 h-8 text-primary" />
-        </div>
-        <h1 className="font-heading text-3xl mb-3">Module complete.</h1>
-        <p className="text-muted-foreground mb-8">Your answers are saved. You can return to the dashboard or keep exploring.</p>
-        <div className="flex flex-col sm:flex-row gap-2 justify-center">
-          <Button onClick={completeModule} className="rounded-full h-12 px-6">Back to dashboard</Button>
-        </div>
-      </div>
-    );
-  }
+  const editing = editingId ? responses.find((r) => r.question_id === editingId) : null;
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="mb-6 text-sm text-muted-foreground">
-        Question {responses.length + 1}
-      </div>
-      {current ? (
-        <>
-          {saving && <div className="flex justify-center mb-3"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>}
-          <VoiceQuestion
-            key={current.question_id}
-            question={current.question_text}
-            firstInstinct={current.first_instinct}
-            onSave={handleSave}
-          />
-        </>
-      ) : (
-        <div className="flex flex-col items-center py-20 gap-3">
-          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Your coach is considering the best next question…</p>
-          <Button variant="outline" onClick={() => fetchNext(session.id, responses)} className="rounded-full mt-2">Try again</Button>
+      {/* Saved answers — read-only by default; edit opens on explicit click */}
+      {responses.length > 0 && (
+        <div className="space-y-3 mb-8">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-medium text-muted-foreground">Your saved answers</h2>
+            <span className="text-xs text-muted-foreground tabular-nums">{responses.length} answered</span>
+          </div>
+          {responses.map((r, i) => {
+            if (editingId === r.question_id) {
+              return (
+                <div key={r.question_id} className="rounded-2xl border border-primary/40 bg-card p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-primary font-medium">Editing answer {i + 1}</span>
+                    <Button variant="ghost" size="sm" onClick={() => setEditingId(null)} className="h-7 px-2 text-muted-foreground gap-1">
+                      <X className="w-3.5 h-3.5" /> Cancel
+                    </Button>
+                  </div>
+                  <VoiceQuestion
+                    key={`edit-${r.question_id}`}
+                    question={r.question_text}
+                    savedResponse={r.saved}
+                    onSave={handleSave}
+                  />
+                </div>
+              );
+            }
+            return (
+              <div key={r.question_id} className="rounded-2xl border border-border bg-card p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="font-heading text-base text-foreground leading-snug">{r.question_text}</p>
+                  <Button variant="ghost" size="sm" onClick={() => { setEditingId(r.question_id); setCurrent(null); }} className="h-7 px-2 text-muted-foreground hover:text-primary shrink-0 gap-1">
+                    <Pencil className="w-3.5 h-3.5" /> Edit
+                  </Button>
+                </div>
+                {r.first_response ? (
+                  <p className="mt-3 text-[15px] leading-relaxed text-foreground/90 whitespace-pre-line">{r.first_response}</p>
+                ) : (
+                  <p className="mt-3 text-sm text-muted-foreground italic">No answer recorded yet.</p>
+                )}
+                {r.reflection_response && (
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground whitespace-pre-line border-t border-border pt-2">
+                    <span className="text-muted-foreground/80">Reflection: </span>{r.reflection_response}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Active editing goes above inside the list; new-question flow below */}
+      {!editingId && (
+        done ? (
+          <div className="max-w-xl mx-auto text-center py-10 animate-in fade-in">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+              <Check className="w-8 h-8 text-primary" />
+            </div>
+            <h1 className="font-heading text-3xl mb-3">Module complete.</h1>
+            <p className="text-muted-foreground mb-8">Your answers are saved above. Tap Edit on any question to revise it.</p>
+            <Button onClick={completeModule} className="rounded-full h-12 px-6">Back to dashboard</Button>
+          </div>
+        ) : current ? (
+          <>
+            <div className="mb-2 text-sm text-muted-foreground">Question {responses.length + 1}</div>
+            {saving && <div className="flex justify-center mb-3"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>}
+            <VoiceQuestion
+              key={current.question_id}
+              question={current.question_text}
+              firstInstinct={current.first_instinct}
+              onSave={handleSave}
+            />
+          </>
+        ) : (
+          <div className="flex flex-col items-center py-12 gap-3">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Your coach is considering the best next question…</p>
+            <Button variant="outline" onClick={() => fetchNext(session.id, responses)} className="rounded-full mt-2">Try again</Button>
+          </div>
+        )
+      )}
+
+      {!editingId && !done && responses.length > 0 && (
+        <div className="mt-8 flex justify-center">
+          <Button variant="ghost" onClick={completeModule} className="rounded-full text-muted-foreground gap-1">
+            Finish & back to dashboard <ChevronRight className="w-4 h-4" />
+          </Button>
         </div>
       )}
     </div>
