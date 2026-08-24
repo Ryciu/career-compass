@@ -41,7 +41,7 @@ export default async function(req: Request): Promise<Response> {
     };
 
     const input = JSON.stringify({ evidence_items: evidenceItems, contradictions, scores, simulations });
-    const out = await responsesChat({ kind: "final", instructions, input, jsonSchema: schema });
+    const out = await responsesChat({ base44, instructions, input, jsonSchema: schema });
     return Response.json({ career_dna: out });
   } catch (error) {
     return Response.json({ error: error.message || 'Career DNA error' }, { status: 500 });

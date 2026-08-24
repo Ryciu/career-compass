@@ -69,7 +69,7 @@ export default async function(req: Request): Promise<Response> {
       })),
     });
 
-    const out = await responsesChat({ kind: "analysis", instructions, input, jsonSchema: schema });
+    const out = await responsesChat({ base44, instructions, input, jsonSchema: schema });
     return Response.json(out);
   } catch (error) {
     return Response.json({ error: error.message || 'Analysis error' }, { status: 500 });

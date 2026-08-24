@@ -57,7 +57,7 @@ Each hypothesis must include per-dimension fit scores (0-100), supporting/contra
     };
 
     const input = JSON.stringify({ career_dna: careerDna, evidence_items: evidenceItems, contradictions, scores, simulations });
-    const out = await responsesChat({ kind: "final", instructions, input, jsonSchema: schema });
+    const out = await responsesChat({ base44, instructions, input, jsonSchema: schema });
     return Response.json(out);
   } catch (error) {
     return Response.json({ error: error.message || 'Hypotheses error' }, { status: 500 });

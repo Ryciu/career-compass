@@ -67,7 +67,7 @@ Produce BOTH:
     };
 
     const input = JSON.stringify(bundle);
-    const out = await responsesChat({ kind: "final", instructions, input, jsonSchema: schema });
+    const out = await responsesChat({ base44, instructions, input, jsonSchema: schema });
     return Response.json(out);
   } catch (error) {
     return Response.json({ error: error.message || 'Report error' }, { status: 500 });

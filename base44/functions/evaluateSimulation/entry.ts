@@ -42,7 +42,7 @@ export default async function(req: Request): Promise<Response> {
       follow_up_responses: followUps,
     });
 
-    const out = await responsesChat({ kind: "analysis", instructions, input, jsonSchema: schema });
+    const out = await responsesChat({ base44, instructions, input, jsonSchema: schema });
     return Response.json(out);
   } catch (error) {
     return Response.json({ error: error.message || 'Evaluation error' }, { status: 500 });

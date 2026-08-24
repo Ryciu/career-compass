@@ -1,52 +1,42 @@
-// Shared OpenAI helper — uses the Responses API, server-side only.
-import OpenAI from "npm:openai";
-import { secrets } from "base44:runtime";
+// Shared LLM helper — uses Base44's built-in InvokeLLM integration (server-side only),
+// running on the subscription-covered model gpt_5_6_sol. No OpenAI API key or secrets required.
+//
+// responsesChat keeps the same return contract as the previous OpenAI Responses wrapper:
+//  - if jsonSchema is provided, returns a parsed object (schema root must be type "object");
+//  - otherwise returns a string.
 
-export function getClient() {
-  const key = secrets.get("OPENAI_API_KEY");
-  if (!key) throw new Error("OPENAI_API_KEY secret is not set.");
-  return new OpenAI({ apiKey: key });
+export const LLM_MODEL = "gpt_5_6_sol";
+
+interface ResponsesChatArgs {
+  base44: any;
+  instructions: string;
+  input: string;
+  jsonSchema?: object;
 }
 
-export function model(kind) {
-  // kind: "coach" | "analysis" | "final" | "transcription"
-  const map = {
-    coach: secrets.get("OPENAI_MODEL_COACH") || "gpt-5.6-terra",
-    analysis: secrets.get("OPENAI_MODEL_ANALYSIS") || "gpt-5.6-terra",
-    final: secrets.get("OPENAI_MODEL_FINAL") || "gpt-5.6-sol",
-    transcription: secrets.get("OPENAI_MODEL_TRANSCRIPTION") || "gpt-transcribe",
-  };
-  return map[kind];
-}
-
-// Thin wrapper around the OpenAI Responses API with optional JSON schema output.
-export async function responsesChat({ kind, instructions, input, jsonSchema }) {
-  const client = getClient();
-  const m = model(kind);
-  const params = {
-    model: m,
-    instructions,
-    input,
+export async function responsesChat({ base44, instructions, input, jsonSchema }: ResponsesChatArgs) {
+  const prompt = `${instructions}\n\nINPUT:\n${input}`;
+  const params: any = {
+    prompt,
+    model: LLM_MODEL,
   };
   if (jsonSchema) {
-    params.text = {
-      format: {
-        type: "json_schema",
-        name: "result",
-        strict: true,
-        schema: jsonSchema,
-      },
-    };
+    params.response_json_schema = jsonSchema;
   }
-  const res = await client.responses.create(params);
-  // Extract text output
-  const text = res.output_text || "";
+
+  const out = await base44.asServiceRole.integrations.Core.InvokeLLM(params);
+
+  // With response_json_schema, InvokeLLM returns a parsed object; otherwise a string.
   if (jsonSchema) {
-    try {
-      return JSON.parse(text);
-    } catch {
-      return text;
+    if (out && typeof out === "object") return out;
+    // Defensive: if a string slipped through, parse it.
+    if (typeof out === "string") {
+      try {
+        return JSON.parse(out);
+      } catch {
+        return out;
+      }
     }
   }
-  return text;
+  return out;
 }

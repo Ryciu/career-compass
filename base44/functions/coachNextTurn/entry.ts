@@ -49,7 +49,7 @@ export default async function(req: Request): Promise<Response> {
       contradictions: contradictions.map((c) => ({ description: c.description, follow_up_question: c.follow_up_question })),
     });
 
-    const out = await responsesChat({ kind: "coach", instructions, input, jsonSchema: schema });
+    const out = await responsesChat({ base44, instructions, input, jsonSchema: schema });
 
     // Safety: if the model says done but core questions remain, force next core question.
     if (out.done && remaining.length) {
