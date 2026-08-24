@@ -111,10 +111,11 @@ export default function Simulations() {
         }
       }).catch(() => {});
 
-      setResponse(""); setFollowUps({}); setEnjoyment(5); setRepeat(5);
-
       if (idx + 1 < ORDER.length) {
         setIdx(idx + 1);
+        // Pre-fill the next step from whatever is already saved for it
+        // (empty defaults if it's a fresh step) — never wipe earlier answers.
+        applyResult(next[ORDER[idx + 1]]);
       } else {
         let session = (await base44.entities.AssessmentSession.filter({ module: "simulations" }))[0];
         if (!session) session = await base44.entities.AssessmentSession.create({ module: "simulations", status: "complete", started_at: new Date().toISOString(), completed_at: new Date().toISOString() });
@@ -126,14 +127,19 @@ export default function Simulations() {
     }
   }
 
+  // Pre-fill the inputs from a saved SimulationResult so the user can edit
+  // or leave answers as-is and move on — never type them from scratch.
+  function applyResult(r) {
+    setResponse(r?.response_text || "");
+    setFollowUps(r?.follow_up_responses || {});
+    setEnjoyment(r?.enjoyment ?? 5);
+    setRepeat(r?.repeat_willingness ?? 5);
+  }
+
   function loadStep(i) {
     setAllDone(false);
     setIdx(i);
-    const r = results[ORDER[i]];
-    setResponse(r?.response_text || "");
-    setFollowUps(r?.follow_up_responses || {});
-    setEnjoyment(r?.enjoyment || 5);
-    setRepeat(r?.repeat_willingness || 5);
+    applyResult(results[ORDER[i]]);
   }
 
   if (loadingInit) {
