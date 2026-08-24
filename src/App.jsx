@@ -1,12 +1,33 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
-// Add page imports here
+import Landing from '@/pages/Landing';
+import Onboarding from '@/pages/Onboarding';
+import Dashboard from '@/pages/Dashboard';
+import OpenModule from '@/pages/OpenModule';
+import RIasec from '@/pages/RIasec';
+import WorkStyle from '@/pages/WorkStyle';
+import Values from '@/pages/Values';
+import Simulations from '@/pages/Simulations';
+import Analysis from '@/pages/Analysis';
+import CareerDna from '@/pages/CareerDna';
+import Hypotheses from '@/pages/Hypotheses';
+import Education from '@/pages/Education';
+import Experiments from '@/pages/Experiments';
+import ActionPlan from '@/pages/ActionPlan';
+import FinalReport from '@/pages/FinalReport';
+import Admin from '@/pages/Admin';
+import Login from '@/pages/Login';
+import Register from '@/pages/Register';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
+import Layout from '@/components/Layout';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -34,7 +55,30 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      {/* Add your page Route elements here */}
+      <Route path="/" element={<Landing />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+
+      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+        <Route path="/app" element={<Layout><Dashboard /></Layout>} />
+        <Route path="/onboarding" element={<Layout><Onboarding /></Layout>} />
+        <Route path="/app/session/:moduleId" element={<Layout><OpenModule /></Layout>} />
+        <Route path="/app/riasec" element={<Layout><RIasec /></Layout>} />
+        <Route path="/app/work-style" element={<Layout><WorkStyle /></Layout>} />
+        <Route path="/app/values" element={<Layout><Values /></Layout>} />
+        <Route path="/app/simulations" element={<Layout><Simulations /></Layout>} />
+        <Route path="/app/analysis" element={<Analysis />} />
+        <Route path="/app/career-dna" element={<CareerDna />} />
+        <Route path="/app/hypotheses" element={<Hypotheses />} />
+        <Route path="/app/education" element={<Education />} />
+        <Route path="/app/experiments" element={<Experiments />} />
+        <Route path="/app/action-plan" element={<ActionPlan />} />
+        <Route path="/app/report" element={<FinalReport />} />
+        <Route path="/admin" element={<Admin />} />
+      </Route>
+
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

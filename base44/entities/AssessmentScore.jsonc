@@ -1,0 +1,59 @@
+{
+  "name": "AssessmentScore",
+  "type": "object",
+  "properties": {
+    "module": {
+      "type": "string"
+    },
+    "scores": {
+      "type": "object"
+    },
+    "raw_data": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "module"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

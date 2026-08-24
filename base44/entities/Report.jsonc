@@ -1,0 +1,92 @@
+{
+  "name": "Report",
+  "type": "object",
+  "properties": {
+    "report_language": {
+      "type": "string",
+      "default": "en"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "complete"
+      ],
+      "default": "draft"
+    },
+    "career_dna": {
+      "type": "object"
+    },
+    "sections": {
+      "type": "object"
+    },
+    "education_direction": {
+      "type": "object"
+    },
+    "experiments": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "action_plan_30_day": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "twelve_month_direction": {
+      "type": "string"
+    },
+    "full_markdown_en": {
+      "type": "string"
+    },
+    "full_markdown_pl": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "report_language"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

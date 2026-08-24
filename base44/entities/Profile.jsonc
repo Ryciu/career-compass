@@ -1,0 +1,82 @@
+{
+  "name": "Profile",
+  "type": "object",
+  "properties": {
+    "first_name": {
+      "type": "string"
+    },
+    "age": {
+      "type": "number"
+    },
+    "education_stage": {
+      "type": "string",
+      "enum": [
+        "high_school",
+        "gap_year",
+        "vocational",
+        "university",
+        "working",
+        "other"
+      ]
+    },
+    "current_country": {
+      "type": "string"
+    },
+    "target_country": {
+      "type": "string"
+    },
+    "preferred_language": {
+      "type": "string",
+      "default": "en"
+    },
+    "onboarding_complete": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "first_name",
+    "age"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

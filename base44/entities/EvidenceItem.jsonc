@@ -1,0 +1,82 @@
+{
+  "name": "EvidenceItem",
+  "type": "object",
+  "properties": {
+    "claim": {
+      "type": "string"
+    },
+    "source_response_id": {
+      "type": "string"
+    },
+    "source_module": {
+      "type": "string"
+    },
+    "domain": {
+      "type": "string"
+    },
+    "supporting_excerpt": {
+      "type": "string"
+    },
+    "strength": {
+      "type": "string",
+      "enum": [
+        "weak",
+        "medium",
+        "strong"
+      ]
+    },
+    "supports_or_contradicts": {
+      "type": "string",
+      "enum": [
+        "supports",
+        "contradicts",
+        "neutral"
+      ]
+    }
+  },
+  "required": [
+    "claim",
+    "domain"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

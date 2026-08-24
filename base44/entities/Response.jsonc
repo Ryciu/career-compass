@@ -1,0 +1,83 @@
+{
+  "name": "Response",
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "question_id": {
+      "type": "string"
+    },
+    "module": {
+      "type": "string"
+    },
+    "input_mode": {
+      "type": "string",
+      "enum": [
+        "voice",
+        "text",
+        "voice_plus_edit"
+      ]
+    },
+    "first_response": {
+      "type": "string"
+    },
+    "reflection_response": {
+      "type": "string"
+    },
+    "audio_file_url": {
+      "type": "string"
+    },
+    "latency_ms": {
+      "type": "number"
+    },
+    "audio_duration_seconds": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "session_id",
+    "module"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

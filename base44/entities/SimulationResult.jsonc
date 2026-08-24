@@ -1,0 +1,78 @@
+{
+  "name": "SimulationResult",
+  "type": "object",
+  "properties": {
+    "simulation_type": {
+      "type": "string",
+      "enum": [
+        "business",
+        "interior",
+        "sport",
+        "digital",
+        "wildcard"
+      ]
+    },
+    "wildcard_domain": {
+      "type": "string"
+    },
+    "response_text": {
+      "type": "string"
+    },
+    "enjoyment": {
+      "type": "number"
+    },
+    "repeat_willingness": {
+      "type": "number"
+    },
+    "evaluation": {
+      "type": "object"
+    },
+    "follow_up_responses": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "simulation_type"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

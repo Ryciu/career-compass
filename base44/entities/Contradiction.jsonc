@@ -1,0 +1,79 @@
+{
+  "name": "Contradiction",
+  "type": "object",
+  "properties": {
+    "description": {
+      "type": "string"
+    },
+    "evidence_item_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "dimension_a": {
+      "type": "string"
+    },
+    "dimension_b": {
+      "type": "string"
+    },
+    "follow_up_question": {
+      "type": "string"
+    },
+    "resolution": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "unresolved",
+        "resolved"
+      ],
+      "default": "unresolved"
+    }
+  },
+  "required": [
+    "description"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

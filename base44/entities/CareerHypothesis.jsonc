@@ -1,0 +1,119 @@
+{
+  "name": "CareerHypothesis",
+  "type": "object",
+  "properties": {
+    "hypothesis_type": {
+      "type": "string",
+      "enum": [
+        "strongest",
+        "wildcard",
+        "weak_current_fit"
+      ]
+    },
+    "career_family": {
+      "type": "string"
+    },
+    "example_roles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "fit_score": {
+      "type": "number"
+    },
+    "confidence_score": {
+      "type": "number"
+    },
+    "interest_fit": {
+      "type": "number"
+    },
+    "strength_fit": {
+      "type": "number"
+    },
+    "work_style_fit": {
+      "type": "number"
+    },
+    "values_fit": {
+      "type": "number"
+    },
+    "simulation_fit": {
+      "type": "number"
+    },
+    "lifestyle_fit": {
+      "type": "number"
+    },
+    "supporting_evidence": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "contradictory_evidence": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "unknowns": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "reality_check": {
+      "type": "string"
+    },
+    "suggested_experiment": {
+      "type": "string"
+    },
+    "education_implication": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "career_family",
+    "hypothesis_type"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
