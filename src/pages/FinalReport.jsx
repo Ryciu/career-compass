@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import Layout, { NoReport, useReport, ResultNav } from "@/pages/CareerDna";
-import { Loader2, Download, FileDown } from "lucide-react";
+import { Loader2, Download, FileDown, FileType } from "lucide-react";
 import { downloadReportPdf } from "@/lib/exportReportPdf";
+import { downloadReportDocx } from "@/lib/exportReportDocx";
 
 export default function FinalReport() {
   const { report, loading } = useReport();
@@ -21,12 +22,13 @@ export default function FinalReport() {
 
   const s = report.sections || {};
 
-  async function handleExport() {
-    setExporting(true);
+  async function handleExport(fmt) {
+    setExporting(fmt);
     try {
-      await downloadReportPdf(report, profileName);
+      if (fmt === "pdf") await downloadReportPdf(report, profileName);
+      else await downloadReportDocx(report, profileName);
     } finally {
-      setExporting(false);
+      setExporting(null);
     }
   }
 
@@ -39,14 +41,24 @@ export default function FinalReport() {
             <h1 className="font-heading text-3xl mb-2">Your Final Report</h1>
             <p className="text-muted-foreground">The evidence as it currently stands. Not a verdict.</p>
           </div>
-          <button
-            onClick={handleExport}
-            disabled={exporting}
-            className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-4 h-9 text-sm font-medium hover:bg-primary/90 disabled:opacity-60 shrink-0"
-          >
-            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
-            Pobierz PDF
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => handleExport("pdf")}
+              disabled={!!exporting}
+              className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-4 h-9 text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
+            >
+              {exporting === "pdf" ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+              Pobierz PDF
+            </button>
+            <button
+              onClick={() => handleExport("docx")}
+              disabled={!!exporting}
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-card text-foreground px-4 h-9 text-sm font-medium hover:bg-accent disabled:opacity-60"
+            >
+              {exporting === "docx" ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileType className="w-4 h-4" />}
+              Pobierz Word
+            </button>
+          </div>
         </div>
 
         <div className="space-y-6">
