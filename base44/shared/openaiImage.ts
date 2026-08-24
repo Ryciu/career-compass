@@ -11,12 +11,15 @@ interface GenArgs {
 
 export async function generateGptImage({ prompt, size = '1536x1024' }: GenArgs) {
   const openai = new OpenAI({ apiKey: secrets.get('OPENAI_API_KEY') });
-  const res = await openai.images.generate({
-    model: 'gpt-image-2',
-    prompt,
-    size,
-    n: 1,
-  });
+  let res;
+  try {
+    res = await openai.images.generate({ model: 'gpt-image-2', prompt, size, n: 1 });
+  } catch (e: any) {
+    // Surface the real OpenAI error (e.g. credit_balance_exhausted) instead of a
+    // generic "Render failed". Rethrow so callers can store/return the message.
+    const msg = e?.error?.message || e?.message || 'Image generation failed';
+    throw new Error(`gpt-image-2: ${msg}`);
+  }
   const item = res?.data?.[0] || {};
   return { b64_json: item.b64_json, url: item.url };
 }

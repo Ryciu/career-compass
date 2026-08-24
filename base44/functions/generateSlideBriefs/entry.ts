@@ -46,7 +46,18 @@ Do NOT invent scores. If a number isn't in the report, leave it out. No chain-of
               slide_title: { type: 'string' },
               core_message: { type: 'string' },
               supporting_points: { type: 'array', items: { type: 'string' } },
-              validated_scores: { type: 'object' },
+              validated_scores: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    metric: { type: 'string' },
+                    value: { type: 'number' },
+                  },
+                  required: ['metric', 'value'],
+                  additionalProperties: false,
+                },
+              },
               career_implications: { type: 'array', items: { type: 'string' } },
               green_flags: { type: 'array', items: { type: 'string' } },
               red_flags: { type: 'array', items: { type: 'string' } },
@@ -56,11 +67,18 @@ Do NOT invent scores. If a number isn't in the report, leave it out. No chain-of
               must_include: { type: 'array', items: { type: 'string' } },
               must_not_include: { type: 'array', items: { type: 'string' } },
             },
-            required: ['slide_number', 'slide_title', 'core_message', 'short_takeaway', 'infographic_type'],
+            required: [
+              'slide_number', 'slide_title', 'core_message', 'supporting_points',
+              'validated_scores', 'career_implications', 'green_flags', 'red_flags',
+              'short_takeaway', 'infographic_type', 'recommended_layout',
+              'must_include', 'must_not_include',
+            ],
+            additionalProperties: false,
           },
         },
       },
       required: ['briefs'],
+      additionalProperties: false,
     };
 
     const out: any = await responsesChat({ base44, instructions, input: JSON.stringify({ slides, report }), jsonSchema: schema });
@@ -68,7 +86,10 @@ Do NOT invent scores. If a number isn't in the report, leave it out. No chain-of
     const prior = await base44.entities.SlideBrief.filter({ report_id });
     for (const p of prior) await base44.entities.SlideBrief.delete(p.id);
     for (const b of out.briefs) {
-      await base44.entities.SlideBrief.create({ report_id, slide_number: b.slide_number, slide_title: b.slide_title, core_message: b.core_message, supporting_points: b.supporting_points || [], validated_scores: b.validated_scores || {}, career_implications: b.career_implications || [], green_flags: b.green_flags || [], red_flags: b.red_flags || [], short_takeaway: b.short_takeaway, infographic_type: b.infographic_type, recommended_layout: b.recommended_layout, must_include: b.must_include || [], must_not_include: b.must_not_include || [] });
+      // validated_scores arrives as [{metric,value},...] → convert to {metric: value}
+      const vsMap: Record<string, number> = {};
+      for (const v of (b.validated_scores || [])) vsMap[v.metric] = v.value;
+      await base44.entities.SlideBrief.create({ report_id, slide_number: b.slide_number, slide_title: b.slide_title, core_message: b.core_message, supporting_points: b.supporting_points || [], validated_scores: vsMap, career_implications: b.career_implications || [], green_flags: b.green_flags || [], red_flags: b.red_flags || [], short_takeaway: b.short_takeaway, infographic_type: b.infographic_type, recommended_layout: b.recommended_layout, must_include: b.must_include || [], must_not_include: b.must_not_include || [] });
     }
 
     return Response.json({ briefs: out.briefs, count: out.briefs.length });

@@ -19,10 +19,12 @@ export default async function (req: Request): Promise<Response> {
     const prior = await base44.entities.GeneratedVisualAsset.filter({ report_id });
     for (const p of prior) await base44.entities.GeneratedVisualAsset.delete(p.id);
 
-    const assets = [];
-    for (const p of prompts) {
+    // Render all slides IN PARALLEL so the function finishes well under the
+    // 120s platform proxy timeout (sequential 7×~38s ≈ 273s would time out).
+    const results = await Promise.all(prompts.map(async (p: any) => {
       let file_url = '';
       let status = 'complete';
+      let errMsg = '';
       try {
         const { b64_json, url } = await generateGptImage({ prompt: p.prompt, size: '1536x1024' });
         if (url) {
@@ -32,9 +34,10 @@ export default async function (req: Request): Promise<Response> {
           const up: any = await base44.asServiceRole.integrations.Core.UploadFile({ file });
           file_url = up?.file_url || '';
         }
-        if (!file_url) status = 'failed';
-      } catch {
+        if (!file_url) { status = 'failed'; errMsg = 'No image URL returned'; }
+      } catch (e: any) {
         status = 'failed';
+        errMsg = e?.message || 'Image generation error';
       }
       const asset = await base44.entities.GeneratedVisualAsset.create({
         report_id,
@@ -47,8 +50,15 @@ export default async function (req: Request): Promise<Response> {
         generation_status: status,
         validation_status: status === 'complete' ? 'valid' : 'invalid',
       });
-      assets.push(asset);
-    }
+      return { asset, errMsg };
+    }));
+
+    const assets = results.map((r) => r.asset);
+    const lastError = results.map((r) => r.errMsg).filter(Boolean)[0] || '';
+
+    // If every slide failed, surface the real error as 500 so the UI can show it.
+    const allFailed = assets.length > 0 && assets.every((a: any) => a.generation_status === 'failed');
+    if (allFailed) return Response.json({ error: lastError || 'All slides failed', assets }, { status: 500 });
 
     return Response.json({ assets, count: assets.length });
   } catch (error) {

@@ -19,6 +19,7 @@ export default async function (req: Request): Promise<Response> {
 
     let file_url = '';
     let generation_status = 'complete';
+    let renderError = '';
     try {
       const { b64_json, url } = await generateGptImage({ prompt: prompt.prompt, size: '1536x1024' });
       if (url) {
@@ -28,9 +29,10 @@ export default async function (req: Request): Promise<Response> {
         const up: any = await base44.asServiceRole.integrations.Core.UploadFile({ file });
         file_url = up?.file_url || '';
       }
-      if (!file_url) generation_status = 'failed';
-    } catch {
+      if (!file_url) { generation_status = 'failed'; renderError = 'No image URL returned'; }
+    } catch (e: any) {
       generation_status = 'failed';
+      renderError = e?.message || 'Image generation error';
     }
 
     const validation_status = generation_status === 'complete' ? 'valid' : 'invalid';
@@ -58,6 +60,9 @@ export default async function (req: Request): Promise<Response> {
       });
     }
 
+    if (generation_status === 'failed') {
+      return Response.json({ asset, error: renderError || 'Image generation failed' }, { status: 500 });
+    }
     return Response.json({ asset });
   } catch (error) {
     return Response.json({ error: error.message || 'Single slide render failed' }, { status: 500 });

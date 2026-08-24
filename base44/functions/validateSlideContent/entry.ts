@@ -45,11 +45,13 @@ Return one check per slide.`;
               removed: { type: 'array', items: { type: 'string' }, description: 'unsupported facts that were removed' },
               corrected_prompt: { type: 'string' },
             },
-            required: ['slide_number', 'valid', 'corrected_prompt'],
+            required: ['slide_number', 'valid', 'removed', 'corrected_prompt'],
+            additionalProperties: false,
           },
         },
       },
       required: ['checks'],
+      additionalProperties: false,
     };
 
     const out: any = await responsesChat({ base44, instructions, input: JSON.stringify({ briefs, prompts, report }), jsonSchema: schema });

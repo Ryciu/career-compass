@@ -38,11 +38,23 @@ export default function VisualStory() {
   async function runPipeline() {
     setRunning(true);
     setError("");
-    setStage("Analysing your report…");
+    // Call each stage directly so every request fits the 120s proxy window;
+    // the combined orchestrator would exceed it and surface a 500.
+    const stages = [
+      ["analyzeReportForVisualStory", "Analysing your report…"],
+      ["selectVisualStories", "Selecting the key stories…"],
+      ["generateSlideBriefs", "Writing slide briefs…"],
+      ["generateImagePrompts", "Crafting image prompts…"],
+      ["validateSlideContent", "Fact-checking against your report…"],
+      ["renderVisualSlides", "Generating infographics with gpt-image-2…"],
+    ];
     try {
-      const r = await base44.functions.invoke("runVisualStoryPipeline", { report_id: reportId });
+      for (const [fn, label] of stages) {
+        setStage(label);
+        const r = await base44.functions.invoke(fn, { report_id: reportId });
+        if (!r?.data || r.data.error) throw new Error(r.data.error || `${fn} failed`);
+      }
       await refresh(reportId);
-      if (!r?.data?.ok) throw new Error(r?.data?.error || "Pipeline failed");
     } catch (e) {
       setError(e.message);
     } finally {
