@@ -12,8 +12,62 @@ export default async function(req: Request): Promise<Response> {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const body = await req.json();
-    const bundle = body || {};
+    const body = await req.json() || {};
+    let bundle = body;
+
+    // Self-fetch mode: when only report_id is supplied, build the bundle from DB
+    // so callers don't have to inline the (large) bundle payload.
+    if (body.report_id && !body.evidence_items) {
+      const uid = user.id;
+      const [scores, sims, evidence, contradictions, hyps] = await Promise.all([
+        base44.entities.AssessmentScore.list(),
+        base44.entities.SimulationResult.list(),
+        base44.entities.EvidenceItem.filter({}),
+        base44.entities.Contradiction.filter({}),
+        base44.entities.CareerHypothesis.filter({}),
+      ]);
+      const report = (await base44.entities.Report.filter({}))[0] || {};
+      const slimScoreMap: Record<string, any> = {};
+      for (const s of scores as any[]) slimScoreMap[s.module] = { scores: s.scores };
+      const simResults = (sims as any[]).map(s => ({
+        simulation_type: s.simulation_type,
+        response_text: (s.response_text || "").slice(0, 300),
+        enjoyment: s.enjoyment, repeat_willingness: s.repeat_willingness, evaluation: s.evaluation,
+      }));
+      const rank: Record<string, number> = { strongest: 0, wildcard: 1, weak_current_fit: 2 };
+      const topHyps = (hyps as any[]).slice().sort((a, b) =>
+        (rank[a.hypothesis_type] ?? 9) - (rank[b.hypothesis_type] ?? 9) || (b.fit_score || 0) - (a.fit_score || 0)
+      ).slice(0, 5);
+      const hypotheses = topHyps.map((h: any) => ({
+        hypothesis_type: h.hypothesis_type, career_family: h.career_family,
+        example_roles: (h.example_roles || []).slice(0, 3),
+        fit_score: h.fit_score, confidence_score: h.confidence_score,
+        supporting_evidence: (h.supporting_evidence || []).slice(0, 3),
+        contradictory_evidence: (h.contradictory_evidence || []).slice(0, 2),
+        unknowns: (h.unknowns || []).slice(0, 2),
+        reality_check: (h.reality_check || "").slice(0, 250),
+        suggested_experiment: (h.suggested_experiment || "").slice(0, 250),
+        education_implication: (h.education_implication || "").slice(0, 250),
+      }));
+      bundle = {
+        evidence_items: (evidence as any[]).slice(0, 18).map(e => ({
+          claim: (e.claim || "").slice(0, 160), domain: e.domain, strength: e.strength,
+          supports_or_contradicts: e.supports_or_contradicts, source_module: e.source_module,
+        })),
+        contradictions: (contradictions as any[]).map(c => ({
+          description: (c.description || "").slice(0, 180), follow_up_question: c.follow_up_question,
+        })),
+        scores: slimScoreMap,
+        sjt: slimScoreMap["sjt"]?.scores || null,
+        career_drivers: slimScoreMap["career_drivers"]?.scores || null,
+        cross_validation: (contradictions as any[]).map(c => ({
+          type: "uncertainty", description: (c.description || "").slice(0, 200), follow_up_question: c.follow_up_question,
+        })),
+        simulations: simResults,
+        career_dna: report.career_dna || {},
+        hypotheses,
+      };
+    }
 
     const task = `## YOUR TASK
 
@@ -40,7 +94,7 @@ Do not over-interpret small differences. A career recommendation must never rest
 
 Produce BOTH:
 1. structured English sections (object fields)
-2. a complete Polish markdown summary (full_markdown_pl) — this is for the admin/researcher view.`;
+2. structured English sections only (object fields). Do NOT produce Polish markdown in this call.`;
     const instructions = COACH_CORE + "\n\n---\n\n" + task;
 
     const experimentSchema = {
@@ -100,9 +154,8 @@ Produce BOTH:
         },
         sjt_behavioral_patterns: { type: "array", items: { type: "string" } },
         where_tests_disagree: { type: "array", items: { type: "string" } },
-        full_markdown_pl: { type: "string", description: "Pełny raport po polsku w formacie Markdown dla administratora/badacza" },
       },
-      required: ["executive_summary", "education_direction_type", "experiments", "action_plan_30_day", "full_markdown_pl"],
+      required: ["executive_summary", "education_direction_type", "experiments", "action_plan_30_day"],
     };
 
     const input = JSON.stringify(bundle);
