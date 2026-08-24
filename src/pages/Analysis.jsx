@@ -36,6 +36,10 @@ async function buildBundle() {
   try { priorEvidence = await base44.entities.EvidenceItem.filter({}); } catch {}
 
   const evidenceByModule = {};
+  let contradictions = [];
+  try { contradictions = await base44.entities.Contradiction.filter({}); } catch {}
+  // Single analyzeModule pass per module — the response carries both evidence items
+  // and contradictions, so one call (not two) covers both.
   for (const mk of Object.keys(resByModule)) {
     try {
       const res = await base44.functions.invoke("analyzeModule", {
@@ -44,10 +48,10 @@ async function buildBundle() {
         priorEvidence: priorEvidence.map((e) => ({ domain: e.domain, claim: e.claim })),
       });
       const items = res?.data?.evidence_items || [];
+      const cons = res?.data?.contradictions || [];
       for (const it of items) {
-        let created;
         try {
-          created = await base44.entities.EvidenceItem.create({
+          await base44.entities.EvidenceItem.create({
             claim: it.claim,
             domain: it.domain,
             supporting_excerpt: it.supporting_excerpt || "",
@@ -58,34 +62,23 @@ async function buildBundle() {
           });
         } catch {}
       }
+      for (const c of cons) {
+        const exists = contradictions.some((x) => x.description === c.description);
+        if (!exists) {
+          try {
+            await base44.entities.Contradiction.create({
+              description: c.description,
+              dimension_a: c.dimension_a || "",
+              dimension_b: c.dimension_b || "",
+              follow_up_question: c.follow_up_question || "",
+              status: "unresolved",
+            });
+            contradictions.push({ description: c.description });
+          } catch {}
+        }
+      }
       evidenceByModule[mk] = items;
     } catch {}
-  }
-
-  const allEvidence = await base44.entities.EvidenceItem.filter({});
-  let contradictions = [];
-  try { contradictions = await base44.entities.Contradiction.filter({}); } catch {}
-  // Save new contradictions from analysis (single merge per fresh run)
-  for (const mk of Object.keys(resByModule)) {
-    const res = await base44.functions.invoke("analyzeModule", {
-      module: mk, responses: resByModule[mk],
-      priorEvidence: allEvidence.map((e) => ({ domain: e.domain, claim: e.claim })),
-    }).catch(() => ({ data: {} }));
-    const cons = res?.data?.contradictions || [];
-    for (const c of cons) {
-      const exists = contradictions.some((x) => x.description === c.description);
-      if (!exists) {
-        try {
-          await base44.entities.Contradiction.create({
-            description: c.description,
-            dimension_a: c.dimension_a || "",
-            dimension_b: c.dimension_b || "",
-            follow_up_question: c.follow_up_question || "",
-            status: "unresolved",
-          });
-        } catch {}
-      }
-    }
   }
 
   const evidence = await base44.entities.EvidenceItem.filter({});
@@ -139,10 +132,17 @@ async function buildBundle() {
     try { await base44.entities.CareerHypothesis.create(h); } catch {}
   }
 
-  // Generate final report
+  // Generate final report (English structured sections only) — split from the Polish
+  // markdown so each LLM call finishes well under the platform execution cap.
   const reportBundle = { ...bundle, career_dna: careerDna, hypotheses };
   const reportRes = await base44.functions.invoke("generateFinalReport", reportBundle);
   const reportData = reportRes?.data || {};
+
+  let markdownPl = "";
+  try {
+    const plRes = await base44.functions.invoke("generatePolishReport", reportBundle);
+    markdownPl = plRes?.data?.full_markdown_pl || "";
+  } catch {}
 
   const reportPayload = {
     report_language: "en",
@@ -169,7 +169,7 @@ async function buildBundle() {
     action_plan_30_day: reportData.action_plan_30_day || [],
     twelve_month_direction: reportData.twelve_month_direction || "",
     full_markdown_en: reportData.executive_summary || "",
-    full_markdown_pl: reportData.full_markdown_pl || "",
+    full_markdown_pl: markdownPl,
   };
   let existingReport = (await base44.entities.Report.filter({}))[0];
   if (existingReport) await base44.entities.Report.update(existingReport.id, reportPayload);
