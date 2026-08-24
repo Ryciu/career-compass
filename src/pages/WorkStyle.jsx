@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { WORK_STYLE_PAIRS } from "@/data/assessment";
 import ModuleShell from "@/components/ModuleShell";
 import { Button } from "@/components/ui/button";
+import { afterModule } from "@/lib/sessionRun";
 import { Loader2 } from "lucide-react";
 
 export default function WorkStyle() {
@@ -21,7 +22,7 @@ export default function WorkStyle() {
       let existing = (await base44.entities.AssessmentScore.filter({ module: "work_style" }))[0];
       if (existing) await base44.entities.AssessmentScore.update(existing.id, payload);
       else await base44.entities.AssessmentScore.create(payload);
-      navigate("/app");
+      afterModule(navigate);
     } finally {
       setSaving(false);
     }

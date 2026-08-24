@@ -5,6 +5,7 @@ import { DRIVER_ITEMS } from "@/data/structuredAssessments";
 import { scoreDrivers } from "@/lib/structuredScoring";
 import ModuleShell from "@/components/ModuleShell";
 import { Button } from "@/components/ui/button";
+import { afterModule } from "@/lib/sessionRun";
 import { Loader2, Check } from "lucide-react";
 
 const TOTAL = DRIVER_ITEMS.length;
@@ -92,7 +93,7 @@ export default function CareerDrivers() {
           <p className="text-xs text-muted-foreground mt-4">
             This is an exploratory career tool. It is not a clinical, diagnostic, certified, or scientifically definitive psychometric test.
           </p>
-          <Button onClick={() => navigate("/app")} className="rounded-full h-11 px-6 mt-6">Back to dashboard</Button>
+          <Button onClick={() => afterModule(navigate)} className="rounded-full h-11 px-6 mt-6">Back to dashboard</Button>
         </div>
       </ModuleShell>
     );

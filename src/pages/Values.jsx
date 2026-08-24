@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { VALUES_CARDS } from "@/data/assessment";
 import ModuleShell from "@/components/ModuleShell";
 import { Button } from "@/components/ui/button";
+import { afterModule } from "@/lib/sessionRun";
 import { Check, Loader2 } from "lucide-react";
 
 export default function Values() {
@@ -34,7 +35,7 @@ export default function Values() {
       let existing = (await base44.entities.AssessmentScore.filter({ module: "values" }))[0];
       if (existing) await base44.entities.AssessmentScore.update(existing.id, payload);
       else await base44.entities.AssessmentScore.create(payload);
-      navigate("/app");
+      afterModule(navigate);
     } finally {
       setSaving(false);
     }

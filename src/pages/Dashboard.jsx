@@ -120,6 +120,14 @@ export default function Dashboard() {
                   <div className="mt-4">
                     {status === "complete" ? (
                       <CompletedCTA sessions={SESSIONS} current={s} statusOf={statusOf} />
+                    ) : s.id === "profile" ? (
+                      <Link
+                        to={`/app/run/${s.id}`}
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:gap-2.5 transition-all"
+                      >
+                        {status === "in_progress" ? "Kontynuuj sesję" : "Rozpocznij sesję"}
+                        <ChevronRight className="w-4 h-4" />
+                      </Link>
                     ) : (
                       <Link
                         to={next ? next.route : "#"}
@@ -182,9 +190,10 @@ function CompletedCTA({ sessions, current, statusOf }) {
   }
   const nextSession = sessions[current.n]; // 1-based n → 0-based index = n is next session
   const nextMod = firstIncompleteInSession(nextSession.id, statusOf);
+  const to = nextSession.id === "profile" ? `/app/run/${nextSession.id}` : (nextMod ? nextMod.route : "/app");
   return (
-    <Link to={nextMod ? nextMod.route : "/app"} className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:gap-2.5 transition-all">
-      Przejdź do sesji {current.n + 1} {nextMod && <span className="text-muted-foreground">— {nextMod.label}</span>} <ChevronRight className="w-4 h-4" />
+    <Link to={to} className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:gap-2.5 transition-all">
+      Przejdź do sesji {current.n + 1}: {nextSession.label} {nextMod && nextSession.id !== "profile" && <span className="text-muted-foreground">— {nextMod.label}</span>} <ChevronRight className="w-4 h-4" />
     </Link>
   );
 }

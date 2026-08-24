@@ -33,6 +33,7 @@ import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import Layout from '@/components/Layout';
+import SessionRunner from '@/pages/SessionRunner';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -70,6 +71,7 @@ const AuthenticatedApp = () => {
         <Route path="/app" element={<Layout><Dashboard /></Layout>} />
         <Route path="/onboarding" element={<Layout><Onboarding /></Layout>} />
         <Route path="/app/session/:moduleId" element={<Layout><OpenModule /></Layout>} />
+        <Route path="/app/run/:sessionId" element={<SessionRunner />} />
         <Route path="/app/riasec" element={<Layout><RIasec /></Layout>} />
         <Route path="/app/work-style" element={<Layout><WorkStyle /></Layout>} />
         <Route path="/app/values" element={<Layout><Values /></Layout>} />

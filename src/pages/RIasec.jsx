@@ -5,6 +5,7 @@ import { RIASEC_ITEMS, RIASEC_LABELS } from "@/data/assessment";
 import { scoreRiasec, shuffle } from "@/lib/scoring";
 import ModuleShell from "@/components/ModuleShell";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { afterModule } from "@/lib/sessionRun";
 import { Loader2, Check } from "lucide-react";
 
 const SCALE = [
@@ -60,7 +61,7 @@ export default function RIasec() {
           ))}
         </div>
         <p className="text-xs text-muted-foreground mt-4">This is an exploratory inventory, not a certified psychological test.</p>
-        <Button className="w-full h-12 rounded-full mt-6" onClick={() => navigate("/app")}>Back to dashboard</Button>
+        <Button className="w-full h-12 rounded-full mt-6" onClick={() => afterModule(navigate)}>Back to dashboard</Button>
       </ModuleShell>
     );
   }
